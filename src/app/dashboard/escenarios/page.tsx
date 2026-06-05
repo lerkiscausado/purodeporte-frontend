@@ -52,14 +52,12 @@ export default async function EscenariosListPage() {
           <h1 className="text-3xl font-black tracking-tight mb-1 uppercase">Escenarios Deportivos</h1>
           <p className="text-muted-foreground text-sm">Gestiona e inspecciona las canchas y complejos deportivos disponibles.</p>
         </div>
-        {isAdmin && (
-          <Link href="/dashboard/escenarios/nuevo">
-            <Button className="font-bold rounded-sm gap-2 bg-primary hover:bg-primary/95 text-primary-foreground border-none">
-              <FaPlus className="h-4 w-4" />
-              Nuevo Escenario
-            </Button>
-          </Link>
-        )}
+        <Link href="/dashboard/escenarios/nuevo">
+          <Button className="font-bold rounded-sm gap-2 bg-primary hover:bg-primary/95 text-primary-foreground border-none">
+            <FaPlus className="h-4 w-4" />
+            Nuevo Escenario
+          </Button>
+        </Link>
       </div>
 
       {/* Alerta de Error */}

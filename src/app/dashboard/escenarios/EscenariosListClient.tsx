@@ -140,14 +140,12 @@ export function EscenariosListClient({ initialEscenarios, isAdmin }: EscenariosL
             <h3 className="text-lg font-black uppercase tracking-tight">No se encontraron escenarios</h3>
             <p className="text-muted-foreground text-sm max-w-sm">Prueba cambiando los términos de búsqueda o filtros.</p>
           </div>
-          {isAdmin && (
-            <Link href="/dashboard/escenarios/nuevo">
-              <Button className="font-bold rounded-sm gap-2">
-                <FaPlus className="h-4 w-4" />
-                Registrar escenario
-              </Button>
-            </Link>
-          )}
+          <Link href="/dashboard/escenarios/nuevo">
+            <Button className="font-bold rounded-sm gap-2">
+              <FaPlus className="h-4 w-4" />
+              Registrar escenario
+            </Button>
+          </Link>
         </div>
       ) : viewMode === "cards" ? (
         /* VISTA DE TARJETAS (CARDS) */
