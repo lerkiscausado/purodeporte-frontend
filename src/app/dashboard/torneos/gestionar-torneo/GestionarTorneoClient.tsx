@@ -1,8 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { updateTorneo } from "@/app/actions/torneos";
 import { Button } from "@/components/ui/button";
 import {
   FaArrowLeft,
@@ -34,7 +36,51 @@ interface GestionarTorneoClientProps {
 }
 
 export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTorneoClientProps) {
+  const router = useRouter();
+  const [isPending, startTransition] = useTransition();
+
   const [activeTab, setActiveTab] = useState<"partidos" | "equipos" | "resumen">("partidos");
+
+  // Estados para la edición del torneo
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editName, setEditName] = useState(torneo.name);
+  const [editEstado, setEditEstado] = useState(torneo.estado);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
+
+  useEffect(() => {
+    setEditName(torneo.name);
+    setEditEstado(torneo.estado);
+  }, [torneo]);
+
+  const handleEditSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEditError(null);
+    setEditSuccess(false);
+
+    if (!editName.trim()) {
+      setEditError("El nombre del torneo no puede estar vacío.");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await updateTorneo(Number(torneo.id), {
+        name: editName,
+        estado: editEstado,
+      });
+
+      if (res.error) {
+        setEditError(res.error);
+      } else {
+        setEditSuccess(true);
+        setTimeout(() => {
+          setIsEditModalOpen(false);
+          setEditSuccess(false);
+          router.refresh();
+        }, 1500);
+      }
+    });
+  };
 
   // Estados de carga e inscripciones reales de la base de datos
   const [inscripciones, setInscripciones] = useState<any[]>([]);
@@ -387,6 +433,14 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                     </div>
                   </div>
                 </div>
+
+                <Button
+                  onClick={() => setIsEditModalOpen(true)}
+                  className="w-full font-bold rounded-sm h-10 bg-primary hover:bg-primary/95 text-primary-foreground border-none text-[11px] uppercase tracking-wider gap-1.5 justify-center"
+                >
+                  <FaEdit className="h-4 w-4" />
+                  Editar Torneo
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -710,6 +764,108 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
           </Card>
         )}
       </div>
+
+      {/* Modal de Editar Torneo */}
+      {isEditModalOpen && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md border-y border-r border-border/60 border-l-4 border-l-primary/70 rounded-sm shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Cabecera */}
+            <div className="flex items-center justify-between border-b border-border/60 p-5 bg-muted/15">
+              <div>
+                <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                  <FaEdit className="text-primary" />
+                  Editar Torneo
+                </h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Modifica los detalles básicos del torneo.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground p-1 transition-colors rounded-sm text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Formulario */}
+            <form onSubmit={handleEditSubmit} className="p-6 space-y-5">
+              
+              {/* Nombre del torneo */}
+              <div className="space-y-2">
+                <label htmlFor="edit-name" className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Nombre del Torneo</label>
+                <Input
+                  id="edit-name"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  required
+                  className="h-12 bg-background/50 border-border rounded-sm w-full font-bold uppercase text-xs"
+                  placeholder="Ej. Torneo de Integración Puro Deporte"
+                />
+              </div>
+
+              {/* Estado */}
+              <div className="space-y-2">
+                <label className="font-bold text-xs uppercase tracking-wider text-muted-foreground">Estado del Torneo</label>
+                <div className="grid grid-cols-2 gap-3">
+                  {["Inscripciones", "En Juego", "Finalizado", "Suspendido"].map((est) => (
+                    <label
+                      key={est}
+                      className={`flex items-center justify-center gap-2 h-12 rounded-sm border cursor-pointer font-bold text-[10px] uppercase tracking-wider transition-all select-none
+                        ${editEstado === est 
+                          ? "bg-primary border-primary text-primary-foreground shadow-sm" 
+                          : "bg-background border-border hover:bg-muted/50 text-muted-foreground hover:text-foreground"}`}
+                    >
+                      <input
+                        type="radio"
+                        name="estado"
+                        value={est}
+                        checked={editEstado === est}
+                        onChange={() => setEditEstado(est)}
+                        className="sr-only"
+                      />
+                      {est}
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              {/* Mensajes de feedback */}
+              {editError && (
+                <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-sm text-destructive text-xs font-semibold text-center">
+                  {editError}
+                </div>
+              )}
+
+              {editSuccess && (
+                <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-sm text-green-500 text-xs font-semibold text-center flex items-center justify-center gap-2">
+                  <FaCheckCircle className="h-4 w-4" />
+                  Torneo actualizado correctamente
+                </div>
+              )}
+
+              {/* Botones de acción */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-12 font-bold rounded-sm text-xs uppercase tracking-wider"
+                  onClick={() => setIsEditModalOpen(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="submit"
+                  className="flex-1 h-12 font-bold rounded-sm bg-primary hover:bg-primary/95 text-primary-foreground border-none text-xs uppercase tracking-wider"
+                  disabled={isPending}
+                >
+                  {isPending ? "Guardando..." : "Guardar Cambios"}
+                </Button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
