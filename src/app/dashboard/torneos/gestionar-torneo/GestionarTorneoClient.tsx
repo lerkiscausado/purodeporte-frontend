@@ -388,6 +388,19 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                   </span>
                 </div>
 
+                {/* Escenario Principal */}
+                <div className="flex justify-between items-center py-2 border-b border-border/40">
+                  <span className="text-muted-foreground font-semibold">Escenario Principal</span>
+                  <span className="font-bold text-foreground text-xs flex items-center gap-1.5 uppercase">
+                    <FaMapMarkerAlt className="h-3.5 w-3.5 text-sky-500 shrink-0" />
+                    {torneo.escenario ? (
+                      torneo.escenario.nombre
+                    ) : (
+                      <span className="italic text-muted-foreground/60 font-medium">Sin escenario principal</span>
+                    )}
+                  </span>
+                </div>
+
                 {/* Reglamento */}
                 {torneo.reglamento ? (
                   <div className="pt-2">
