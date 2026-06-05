@@ -249,34 +249,38 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
   // Helper de filtrado por deporte
   const isSportMatching = (torneoDeporte: string, equipoDeporte: string) => {
     if (!torneoDeporte || !equipoDeporte) return false;
-    const tDep = torneoDeporte.toLowerCase();
-    const eDep = equipoDeporte.toLowerCase();
+    const tDep = torneoDeporte.toLowerCase().trim();
+    const eDep = equipoDeporte.toLowerCase().trim();
 
     // fútbol, futsal, golito, microfútbol son variantes de fútbol
-    if (
-      tDep.includes("futbol") ||
-      tDep.includes("fútbol") ||
-      tDep.includes("soccer") ||
-      tDep.includes("golito") ||
-      tDep.includes("microfutbol") ||
-      tDep.includes("futsal")
-    ) {
-      return (
-        eDep.includes("futbol") ||
-        eDep.includes("fútbol") ||
-        eDep.includes("soccer") ||
-        eDep.includes("golito") ||
-        eDep.includes("microfutbol") ||
-        eDep.includes("futsal")
-      );
+    const isFutbol = (dep: string) => 
+      dep.includes("futbol") ||
+      dep.includes("fútbol") ||
+      dep.includes("soccer") ||
+      dep.includes("golito") ||
+      dep.includes("microfutbol") ||
+      dep.includes("futsal");
+
+    if (isFutbol(tDep)) {
+      return isFutbol(eDep);
     }
-    if (tDep.includes("basket") || tDep.includes("baloncesto")) {
-      return eDep.includes("basket") || eDep.includes("baloncesto");
+
+    const isBasket = (dep: string) =>
+      dep.includes("basket") || dep.includes("baloncesto");
+
+    if (isBasket(tDep)) {
+      return isBasket(eDep);
     }
-    if (tDep.includes("voley") || tDep.includes("voleibol")) {
-      return eDep.includes("voley") || eDep.includes("voleibol");
+
+    const isVoley = (dep: string) =>
+      dep.includes("voley") || dep.includes("voleibol");
+
+    if (isVoley(tDep)) {
+      return isVoley(eDep);
     }
-    return false;
+
+    // Fallback para cualquier otra disciplina (ej. Tenis de Mesa, Atletismo, etc.)
+    return tDep === eDep || tDep.includes(eDep) || eDep.includes(tDep);
   };
 
   // Filtrar equipos por deporte y excluir los ya inscritos
