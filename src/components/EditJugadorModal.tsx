@@ -199,6 +199,7 @@ export function EditJugadorModal({ jugador }: EditJugadorModalProps) {
                   id="edit-identificacion"
                   name="identificacion"
                   defaultValue={jugador.identificacion || ""}
+                  required
                   className="h-12 bg-background/50 border-border rounded-sm w-full"
                 />
               </div>

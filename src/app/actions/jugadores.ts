@@ -11,8 +11,8 @@ export async function createJugador(formData: FormData) {
   const identificacion = formData.get("identificacion") as string;
   const estado = formData.get("estado") as string;
 
-  if (!nombre || !apellidos || !genero || !fechaNacimiento || !estaturaRaw) {
-    return { error: "Los campos nombre, apellidos, género, fecha de nacimiento y estatura son obligatorios." };
+  if (!nombre || !apellidos || !genero || !fechaNacimiento || !estaturaRaw || !identificacion) {
+    return { error: "Los campos nombre, apellidos, género, fecha de nacimiento, estatura e identificación son obligatorios." };
   }
 
   const estatura = parseFloat(estaturaRaw);
@@ -74,8 +74,8 @@ export async function updateJugador(id: number, formData: FormData) {
   const identificacion = formData.get("identificacion") as string;
   const estado = formData.get("estado") as string;
 
-  if (!nombre || !apellidos || !genero || !fechaNacimiento || !estaturaRaw) {
-    return { error: "Los campos nombre, apellidos, género, fecha de nacimiento y estatura son obligatorios." };
+  if (!nombre || !apellidos || !genero || !fechaNacimiento || !estaturaRaw || !identificacion) {
+    return { error: "Los campos nombre, apellidos, género, fecha de nacimiento, estatura e identificación son obligatorios." };
   }
 
   const estatura = parseFloat(estaturaRaw);

@@ -22,9 +22,10 @@ import { cn } from "@/lib/utils";
 interface JugadoresListClientProps {
   initialJugadores: any[];
   baseUrl: string;
+  canModifyOrDelete: boolean;
 }
 
-export function JugadoresListClient({ initialJugadores, baseUrl }: JugadoresListClientProps) {
+export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDelete }: JugadoresListClientProps) {
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
   const [search, setSearch] = useState("");
   const [genderFilter, setGenderFilter] = useState("all");
@@ -280,13 +281,15 @@ export function JugadoresListClient({ initialJugadores, baseUrl }: JugadoresList
                 </div>
 
                 {/* Acciones */}
-                <div className="p-3 border-t border-border/40 bg-muted/10 flex items-center justify-end gap-2.5 shrink-0">
-                  <EditJugadorModal jugador={jugador} />
-                  <DeleteJugadorButton
-                    jugadorId={jugador.id}
-                    jugadorNombre={jugador.nombre}
-                  />
-                </div>
+                {canModifyOrDelete && (
+                  <div className="p-3 border-t border-border/40 bg-muted/10 flex items-center justify-end gap-2.5 shrink-0">
+                    <EditJugadorModal jugador={jugador} />
+                    <DeleteJugadorButton
+                      jugadorId={jugador.id}
+                      jugadorNombre={jugador.nombre}
+                    />
+                  </div>
+                )}
               </div>
             );
           })}
@@ -305,7 +308,9 @@ export function JugadoresListClient({ initialJugadores, baseUrl }: JugadoresList
                   <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Nacimiento</th>
                   <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Estatura</th>
                   <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Identificación</th>
-                  <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Acciones</th>
+                  {canModifyOrDelete && (
+                    <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Acciones</th>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -381,15 +386,17 @@ export function JugadoresListClient({ initialJugadores, baseUrl }: JugadoresList
                     </td>
 
                     {/* Acciones */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-3">
-                        <EditJugadorModal jugador={jugador} />
-                        <DeleteJugadorButton
-                          jugadorId={jugador.id}
-                          jugadorNombre={jugador.nombre}
-                        />
-                      </div>
-                    </td>
+                    {canModifyOrDelete && (
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <EditJugadorModal jugador={jugador} />
+                          <DeleteJugadorButton
+                            jugadorId={jugador.id}
+                            jugadorNombre={jugador.nombre}
+                          />
+                        </div>
+                      </td>
+                    )}
                   </tr>
                 ))}
               </tbody>

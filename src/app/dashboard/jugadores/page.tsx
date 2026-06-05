@@ -7,6 +7,16 @@ import { JugadoresListClient } from "./JugadoresListClient";
 export default async function JugadoresListPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
+  const userDataCookie = cookieStore.get("user_data");
+
+  let user = { name: "Usuario", email: "", role: "user" };
+  if (userDataCookie?.value) {
+    try {
+      user = JSON.parse(userDataCookie.value);
+    } catch { }
+  }
+
+  const canModifyOrDelete = user.role !== "user";
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
@@ -75,7 +85,7 @@ export default async function JugadoresListPage() {
           </Link>
         </div>
       ) : (
-        <JugadoresListClient initialJugadores={jugadores} baseUrl={baseUrl} />
+        <JugadoresListClient initialJugadores={jugadores} baseUrl={baseUrl} canModifyOrDelete={canModifyOrDelete} />
       )}
     </div>
   );

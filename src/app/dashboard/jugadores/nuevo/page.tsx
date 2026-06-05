@@ -171,11 +171,12 @@ export default function RegistrarJugadorPage() {
 
             {/* Identificación */}
             <div className="space-y-2">
-              <Label htmlFor="identificacion" className="font-bold">Identificación <span className="text-muted-foreground font-normal text-xs">(opcional)</span></Label>
+              <Label htmlFor="identificacion" className="font-bold">Identificación</Label>
               <Input
                 id="identificacion"
                 name="identificacion"
                 placeholder="Ej. 1000222333"
+                required
                 className="bg-background/50 h-12 border-border/60 rounded-sm"
               />
             </div>
