@@ -18,6 +18,16 @@ import { EditEscenarioModal } from "@/components/EditEscenarioModal";
 export default async function EscenariosListPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
+  const userDataCookie = cookieStore.get("user_data");
+
+  let user = { name: "Usuario", email: "", role: "user", phone: "" };
+  if (userDataCookie?.value) {
+    try {
+      user = JSON.parse(userDataCookie.value);
+    } catch { }
+  }
+
+  const isAdmin = user.role === "admin";
 
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
   const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
@@ -107,12 +117,14 @@ export default async function EscenariosListPage() {
           <h1 className="text-3xl font-black tracking-tight mb-1 uppercase">Escenarios Deportivos</h1>
           <p className="text-muted-foreground text-sm">Gestiona e inspecciona las canchas y complejos deportivos disponibles.</p>
         </div>
-        <Link href="/dashboard/escenarios/nuevo">
-          <Button className="font-bold rounded-sm gap-2 bg-primary hover:bg-primary/95 text-primary-foreground border-none">
-            <FaPlus className="h-4 w-4" />
-            Nuevo Escenario
-          </Button>
-        </Link>
+        {isAdmin && (
+          <Link href="/dashboard/escenarios/nuevo">
+            <Button className="font-bold rounded-sm gap-2 bg-primary hover:bg-primary/95 text-primary-foreground border-none">
+              <FaPlus className="h-4 w-4" />
+              Nuevo Escenario
+            </Button>
+          </Link>
+        )}
       </div>
 
       {/* Alerta de Error */}
@@ -132,12 +144,14 @@ export default async function EscenariosListPage() {
             <h3 className="text-lg font-black uppercase tracking-tight">No hay escenarios registrados</h3>
             <p className="text-muted-foreground text-sm max-w-sm">Registra las instalaciones físicas donde se llevarán a cabo los encuentros deportivos.</p>
           </div>
-          <Link href="/dashboard/escenarios/nuevo">
-            <Button className="font-bold rounded-sm gap-2">
-              <FaPlus className="h-4 w-4" />
-              Registrar mi primer escenario
-            </Button>
-          </Link>
+          {isAdmin && (
+            <Link href="/dashboard/escenarios/nuevo">
+              <Button className="font-bold rounded-sm gap-2">
+                <FaPlus className="h-4 w-4" />
+                Registrar mi primer escenario
+              </Button>
+            </Link>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -215,17 +229,19 @@ export default async function EscenariosListPage() {
                 </div>
 
                 {/* Acciones */}
-                <div className="pt-2 border-t border-border/50">
-                  <EditEscenarioModal
-                    escenarioId={escenario.id}
-                    escenarioNombre={escenario.nombre}
-                    escenarioDireccion={escenario.direccion}
-                    escenarioDeporte={escenario.deporte}
-                    escenarioEstado={escenario.estado}
-                    escenarioBarrioSector={escenario.barrioSector}
-                    escenarioUbicacion={escenario.ubicacion}
-                  />
-                </div>
+                {isAdmin && (
+                  <div className="pt-2 border-t border-border/50">
+                    <EditEscenarioModal
+                      escenarioId={escenario.id}
+                      escenarioNombre={escenario.nombre}
+                      escenarioDireccion={escenario.direccion}
+                      escenarioDeporte={escenario.deporte}
+                      escenarioEstado={escenario.estado}
+                      escenarioBarrioSector={escenario.barrioSector}
+                      escenarioUbicacion={escenario.ubicacion}
+                    />
+                  </div>
+                )}
               </CardContent>
             </Card>
           ))}
