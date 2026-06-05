@@ -18,7 +18,7 @@ import {
   FaUser,
 } from "react-icons/fa";
 import Link from "next/link";
-import { getEquipos } from "@/app/actions/equipos";
+import { getMisEquipos } from "@/app/actions/equipos";
 import { getInscripcionesPorTorneo, createInscripcion } from "@/app/actions/inscripciones";
 import { cn } from "@/lib/utils";
 
@@ -221,7 +221,7 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
     async function loadData() {
       try {
         const [eqResult, inscResult] = await Promise.all([
-          getEquipos(),
+          getMisEquipos(),
           getInscripcionesPorTorneo(Number(torneo.id)),
         ]);
 
