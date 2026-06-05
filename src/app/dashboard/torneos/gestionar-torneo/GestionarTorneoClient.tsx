@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { updateTorneo } from "@/app/actions/torneos";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
   FaArrowLeft,
   FaTrophy,
@@ -24,6 +25,7 @@ import {
   FaPlus,
   FaTrash,
   FaClipboardList,
+  FaEdit,
 } from "react-icons/fa";
 import { DatePickerStrip } from "@/components/DatePickerStrip";
 import { getInscripcionesPorTorneo, deleteInscripcion } from "@/app/actions/inscripciones";
@@ -796,7 +798,7 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                 <Input
                   id="edit-name"
                   value={editName}
-                  onChange={(e) => setEditName(e.target.value)}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => setEditName(e.target.value)}
                   required
                   className="h-12 bg-background/50 border-border rounded-sm w-full font-bold uppercase text-xs"
                   placeholder="Ej. Torneo de Integración Puro Deporte"
