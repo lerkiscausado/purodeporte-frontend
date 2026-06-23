@@ -4,7 +4,16 @@ import { Button } from "@/components/ui/button";
 import { FaUsers, FaPlus } from "react-icons/fa";
 import { JugadoresListClient } from "./JugadoresListClient";
 
-export default async function JugadoresListPage() {
+export default async function JugadoresListPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string; search?: string; gender?: string }>;
+}) {
+  const params = await searchParams;
+  const page = parseInt(params.page || "1", 10);
+  const search = params.search || "";
+  const gender = params.gender || "all";
+
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
   const userDataCookie = cookieStore.get("user_data");
@@ -22,11 +31,23 @@ export default async function JugadoresListPage() {
   const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
 
   let jugadores: any[] = [];
+  let totalJugadores = 0;
   let errorMsg = "";
 
   if (token) {
     try {
-      const response = await fetch(`${baseUrl}/jugadores`, {
+      const queryParams = new URLSearchParams({
+        page: page.toString(),
+        limit: "15",
+      });
+      if (search) {
+        queryParams.append("search", search);
+      }
+      if (gender && gender !== "all") {
+        queryParams.append("gender", gender);
+      }
+
+      const response = await fetch(`${baseUrl}/jugadores?${queryParams.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -34,7 +55,9 @@ export default async function JugadoresListPage() {
       });
 
       if (response.ok) {
-        jugadores = await response.json();
+        const result = await response.json();
+        jugadores = result.data || [];
+        totalJugadores = result.total || 0;
       } else {
         errorMsg = "No se pudieron obtener los jugadores del servidor.";
       }
@@ -43,6 +66,8 @@ export default async function JugadoresListPage() {
       errorMsg = "Error de conexión al obtener los jugadores.";
     }
   }
+
+  const isTrulyEmpty = totalJugadores === 0 && !search && gender === "all";
 
   return (
     <div className="space-y-8">
@@ -68,7 +93,7 @@ export default async function JugadoresListPage() {
       )}
 
       {/* Contenido */}
-      {jugadores.length === 0 ? (
+      {isTrulyEmpty ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border/60 bg-muted/10 rounded-sm space-y-4">
           <div className="flex items-center justify-center h-16 w-16 rounded-sm bg-primary/10 text-primary">
             <FaUsers className="h-8 w-8" />
@@ -85,7 +110,12 @@ export default async function JugadoresListPage() {
           </Link>
         </div>
       ) : (
-        <JugadoresListClient initialJugadores={jugadores} baseUrl={baseUrl} canModifyOrDelete={canModifyOrDelete} />
+        <JugadoresListClient
+          initialJugadores={jugadores}
+          totalJugadores={totalJugadores}
+          baseUrl={baseUrl}
+          canModifyOrDelete={canModifyOrDelete}
+        />
       )}
     </div>
   );

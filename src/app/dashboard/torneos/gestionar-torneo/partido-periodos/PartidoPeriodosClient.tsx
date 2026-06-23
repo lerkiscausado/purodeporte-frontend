@@ -38,13 +38,13 @@ interface PartidoPeriodosClientProps {
 const REGULAR_PERIODS_BY_SPORT: Record<string, string[]> = {
   FUTBOL: ["Primer Tiempo", "Segundo Tiempo"],
   BALONCESTO: ["Cuarto 1", "Cuarto 2", "Cuarto 3", "Cuarto 4"],
-  VOLEY: ["Set 1", "Set 2", "Set 3", "Set 4", "Set 5"],
+  VOLEY: ["Set 1", "Set 2"],
 };
 
 const EXTRA_PERIODS_BY_SPORT: Record<string, string[]> = {
   FUTBOL: ["Tiempo Extra 1", "Tiempo Extra 2", "Penales"],
   BALONCESTO: ["Prórroga 1", "Prórroga 2", "Prórroga 3"],
-  VOLEY: ["Set de Oro"],
+  VOLEY: ["Set 3", "Set 4", "Set 5"],
 };
 
 export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClientProps) {
@@ -84,6 +84,9 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
   const deporteKey = getDeporteKey(torneo.deporte);
   const regularPeriodNames = REGULAR_PERIODS_BY_SPORT[deporteKey] || REGULAR_PERIODS_BY_SPORT.BALONCESTO;
   const extraPeriodNames = EXTRA_PERIODS_BY_SPORT[deporteKey] || EXTRA_PERIODS_BY_SPORT.BALONCESTO;
+
+  const isVoley = deporteKey === "VOLEY";
+  const savedRegularPeriodsCount = periodos.filter((p) => p.tipoPeriodo === "Regular").length;
 
   // Cargar periodos del partido
   const loadPeriodos = async () => {
@@ -162,22 +165,64 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
     let totalLocal = 0;
     let totalVisitante = 0;
 
-    // 1. Sumar periodos guardados
-    periodos.forEach((p) => {
-      totalLocal += p.scoreLocal ?? 0;
-      totalVisitante += p.scoreVisitante ?? 0;
-    });
+    if (isVoley) {
+      // Para voleibol, el marcador del partido son los sets ganados
+      periodos.forEach((p) => {
+        const scoreL = p.scoreLocal ?? 0;
+        const scoreV = p.scoreVisitante ?? 0;
+        if (scoreL > scoreV) totalLocal += 1;
+        else if (scoreV > scoreL) totalVisitante += 1;
+      });
 
-    // 2. Sumar input del periodo activo actual (si el usuario está escribiendo)
-    const activeLocalVal = parseInt(activeLocalScore, 10);
-    const activeVisitanteVal = parseInt(activeVisitanteScore, 10);
-    if (!isNaN(activeLocalVal)) totalLocal += activeLocalVal;
-    if (!isNaN(activeVisitanteVal)) totalVisitante += activeVisitanteVal;
+      const activeLocalVal = parseInt(activeLocalScore, 10);
+      const activeVisitanteVal = parseInt(activeVisitanteScore, 10);
+      if (!isNaN(activeLocalVal) && !isNaN(activeVisitanteVal)) {
+        if (activeLocalVal > activeVisitanteVal) totalLocal += 1;
+        else if (activeVisitanteVal > activeLocalVal) totalVisitante += 1;
+      }
+    } else {
+      // 1. Sumar periodos guardados
+      periodos.forEach((p) => {
+        totalLocal += p.scoreLocal ?? 0;
+        totalVisitante += p.scoreVisitante ?? 0;
+      });
+
+      // 2. Sumar input del periodo activo actual (si el usuario está escribiendo)
+      const activeLocalVal = parseInt(activeLocalScore, 10);
+      const activeVisitanteVal = parseInt(activeVisitanteScore, 10);
+      if (!isNaN(activeLocalVal)) totalLocal += activeLocalVal;
+      if (!isNaN(activeVisitanteVal)) totalVisitante += activeVisitanteVal;
+    }
 
     return { totalLocal, totalVisitante };
   };
 
   const { totalLocal, totalVisitante } = calculateLiveScore();
+
+  // Modal de confirmación para finalizar encuentro
+  const [isConfirmModalOpen, setIsConfirmModalOpen] = useState<boolean>(false);
+
+  // Obtener marcador oficial final que se guardará
+  const getFinalScore = () => {
+    let finalLocal = 0;
+    let finalVisitante = 0;
+    if (isVoley) {
+      periodos.forEach((p) => {
+        const scoreL = p.scoreLocal ?? 0;
+        const scoreV = p.scoreVisitante ?? 0;
+        if (scoreL > scoreV) finalLocal += 1;
+        else if (scoreV > scoreL) finalVisitante += 1;
+      });
+    } else {
+      periodos.forEach((p) => {
+        finalLocal += p.scoreLocal ?? 0;
+        finalVisitante += p.scoreVisitante ?? 0;
+      });
+    }
+    return { finalLocal, finalVisitante };
+  };
+
+  const { finalLocal, finalVisitante } = getFinalScore();
 
   // Calcular marcador solo del tiempo regular (para saber si hay empate)
   const isRegularTimeFinished = regularPeriodNames.every((name) => periodosGuardadosMap.has(name));
@@ -321,22 +366,29 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
 
   // Finalizar el encuentro oficial
   const handleFinalizeMatch = async () => {
-    if (!confirm("¿Estás seguro de finalizar este encuentro? Se actualizará la tabla de posiciones con este marcador oficial.")) {
-      return;
-    }
-
     setError(null);
     setSuccess(null);
+    setIsConfirmModalOpen(false);
 
     startTransition(async () => {
       // 1. Obtener la sumatoria real de los periodos guardados
       let finalLocal = 0;
       let finalVisitante = 0;
 
-      periodos.forEach((p) => {
-        finalLocal += p.scoreLocal ?? 0;
-        finalVisitante += p.scoreVisitante ?? 0;
-      });
+      if (isVoley) {
+        // Para voleibol, el marcador final es el número de sets ganados
+        periodos.forEach((p) => {
+          const scoreL = p.scoreLocal ?? 0;
+          const scoreV = p.scoreVisitante ?? 0;
+          if (scoreL > scoreV) finalLocal += 1;
+          else if (scoreV > scoreL) finalVisitante += 1;
+        });
+      } else {
+        periodos.forEach((p) => {
+          finalLocal += p.scoreLocal ?? 0;
+          finalVisitante += p.scoreVisitante ?? 0;
+        });
+      }
 
       // 2. Llamar PATCH /partidos/:id para cambiar a Finalizado con los marcadores consolidados
       const res = await updatePartido(partido.id, {
@@ -349,6 +401,7 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
         setError(res.error);
       } else {
         router.push(`/dashboard/torneos/gestionar-torneo?id=${torneo.id}&tab=partidos`);
+        router.refresh();
       }
     });
   };
@@ -790,14 +843,16 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
                   })}
 
                 {/* 3. ALERTA DE EMPATE EN TIEMPO REGULAR Y FOTO DEL SCORE EXTRA ACTIVO */}
-                {isRegularTimeFinished && hasTie && (deporteKey === "BALONCESTO" || deporteKey === "FUTBOL") && (
+                {((isRegularTimeFinished && hasTie && (deporteKey === "BALONCESTO" || deporteKey === "FUTBOL")) || (isVoley && !!activeExtraPeriodName)) && (
                   <>
-                    {/* Alerta de Empate */}
-                    <tr className="bg-primary/5 select-none">
-                      <td colSpan={4} className="px-6 py-2.5 text-center text-xs font-bold text-primary tracking-wide border-b border-border/40">
-                        * ¡Empate detectado en tiempo regular! *
-                      </td>
-                    </tr>
+                    {/* Alerta de Empate (No aplica a Voleibol) */}
+                    {!isVoley && (
+                      <tr className="bg-primary/5 select-none">
+                        <td colSpan={4} className="px-6 py-2.5 text-center text-xs font-bold text-primary tracking-wide border-b border-border/40">
+                          * ¡Empate detectado en tiempo regular! *
+                        </td>
+                      </tr>
+                    )}
 
                     {/* Fila Editable de Periodo Extra Activo */}
                     {activeExtraPeriodName && (
@@ -879,7 +934,7 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
       {partido.estado !== "Finalizado" && (
         <div className="space-y-4">
           {/* Botón Agregar Tiempo Extra */}
-          {isRegularTimeFinished && !activeExtraPeriodName && (
+          {isRegularTimeFinished && !activeExtraPeriodName && (!isVoley || periodos.length < 5) && (
             <Button
               onClick={() => {
                 setActiveExtraPeriodName(getNextExtraPeriodName());
@@ -891,14 +946,14 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
               className="w-full font-bold h-12 rounded-sm border-primary text-primary hover:bg-primary/5 uppercase tracking-wider text-xs flex items-center justify-center gap-2 transition-all duration-200"
             >
               <FaPlus className="h-3.5 w-3.5" />
-              [ + Agregar Tiempo Extra ]
+              {isVoley ? "[ + Agregar Set Adicional ]" : "[ + Agregar Tiempo Extra ]"}
             </Button>
           )}
 
           {/* Botón Finalizar Encuentro Oficial */}
           <Button
-            onClick={handleFinalizeMatch}
-            disabled={isPending || !!activeExtraPeriodName || !!primerPeriodoNoGuardado}
+            onClick={() => setIsConfirmModalOpen(true)}
+            disabled={isPending || !!activeExtraPeriodName || !!primerPeriodoNoGuardado || (isVoley && finalLocal === finalVisitante)}
             className="w-full font-black h-14 rounded-sm bg-slate-900 border border-white/10 text-white hover:bg-slate-800 uppercase tracking-widest text-xs flex items-center justify-center gap-2.5 shadow-lg group relative overflow-hidden"
           >
             <span className="absolute left-0 top-0 bottom-0 w-1.5 bg-primary group-hover:w-2 transition-all" />
@@ -908,6 +963,87 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
           <p className="text-center text-[10px] text-muted-foreground/80 italic font-semibold">
             (Al hacer clic, se cerrará el partido y se actualizará la tabla de posiciones)
           </p>
+        </div>
+      )}
+
+      {/* Modal de confirmación para finalizar encuentro */}
+      {isConfirmModalOpen && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-in fade-in duration-200">
+          <div className="bg-card w-full max-w-md border-y border-r border-border/60 border-l-4 border-l-primary/70 rounded-sm shadow-xl overflow-hidden animate-in zoom-in-95 duration-200">
+            {/* Cabecera */}
+            <div className="flex items-center justify-between border-b border-border/60 p-5 bg-muted/15">
+              <div>
+                <h2 className="text-lg font-black uppercase tracking-tight flex items-center gap-2">
+                  <FaCheckCircle className="text-primary" />
+                  Finalizar Encuentro
+                </h2>
+                <p className="text-[11px] text-muted-foreground mt-0.5">Confirma la finalización oficial del partido.</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsConfirmModalOpen(false)}
+                className="text-muted-foreground hover:text-foreground p-1 transition-colors rounded-sm text-sm"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido */}
+            <div className="p-6 space-y-4">
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                ¿Estás seguro de que deseas finalizar este encuentro? Esta acción guardará el siguiente marcador oficial en el sistema y actualizará la tabla de posiciones del torneo.
+              </p>
+
+              <div className="flex items-center justify-between gap-4 p-4 bg-[oklch(0.25_0.05_255)] text-white border border-white/10 rounded-sm">
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <span className="text-[10px] text-sky-400 font-bold uppercase tracking-widest">Local</span>
+                  <span className="text-xs font-black uppercase tracking-tight mt-1 line-clamp-1">
+                    {partido.equipoLocal?.nombre || "Local"}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-3 px-3 py-1.5 bg-primary text-primary-foreground font-mono font-black text-lg rounded-sm shadow-md">
+                  <span>{finalLocal}</span>
+                  <span className="text-xs opacity-70">-</span>
+                  <span>{finalVisitante}</span>
+                </div>
+
+                <div className="flex flex-col items-center flex-1 text-center">
+                  <span className="text-[10px] text-primary font-bold uppercase tracking-widest">Visitante</span>
+                  <span className="text-xs font-black uppercase tracking-tight mt-1 line-clamp-1">
+                    {partido.equipoVisitante?.nombre || "Visitante"}
+                  </span>
+                </div>
+              </div>
+
+              {isVoley && (
+                <p className="text-[10px] text-primary/80 bg-primary/5 border border-primary/15 p-2 rounded-sm font-semibold text-center uppercase tracking-wider">
+                  * Marcador consolidado en Sets Ganados (Voleibol) *
+                </p>
+              )}
+
+              {/* Botones de Acción */}
+              <div className="flex gap-3 pt-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="flex-1 h-12 font-bold rounded-sm text-xs uppercase tracking-wider"
+                  onClick={() => setIsConfirmModalOpen(false)}
+                  disabled={isPending}
+                >
+                  Cancelar
+                </Button>
+                <Button
+                  type="button"
+                  onClick={handleFinalizeMatch}
+                  className="flex-1 h-12 font-black rounded-sm bg-slate-900 border border-white/10 text-white hover:bg-slate-800 uppercase tracking-widest text-[11px]"
+                  disabled={isPending}
+                >
+                  {isPending ? "Procesando..." : "Sí, Finalizar"}
+                </Button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

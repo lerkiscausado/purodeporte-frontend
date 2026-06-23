@@ -6,6 +6,8 @@ import { getNoticias, getProgramacion, getResultados, getTorneos } from "@/servi
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { DeportesAccordion } from "@/components/DeportesAccordion";
+import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 
 export default async function Home() {
   const [noticias, torneos, programacion, resultados] = await Promise.all([
@@ -14,6 +16,18 @@ export default async function Home() {
     getProgramacion(),
     getResultados()
   ]);
+
+  // Obtener torneos agrupados por deporte desde la API
+  let deportesData = { deportes: {} };
+  try {
+    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000").replace(/\/api$/, "");
+    const res = await fetch(`${baseUrl}/torneos/public`, { cache: "no-store" });
+    if (res.ok) {
+      deportesData = await res.json();
+    }
+  } catch (error) {
+    console.error("Error fetching public tournaments:", error);
+  }
 
   // Encontrar partido en vivo o el próximo
   const partidoDestacado = programacion[0];
@@ -76,9 +90,18 @@ export default async function Home() {
 
           {/* ── COL 1: TORNEOS (25%) ─────────────────── */}
           <div className="space-y-6">
+            <section className="pt-4 border-t border-border/40">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-extrabold marca-line">Deportes</h2>
+                <Link href="/torneos" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-primary font-semibold text-xs h-7 px-2" })}>
+                  Ver todos <ArrowRight className="ml-1 h-3 w-3" />
+                </Link>
+              </div>
+              <DeportesAccordion deportesData={deportesData.deportes} />
+            </section>
             <section>
               <div className="flex items-center justify-between mb-4">
-                <h2 className="text-lg font-extrabold marca-line">Torneos</h2>
+                <h2 className="text-lg font-extrabold marca-line">Popular</h2>
                 <Link href="/torneos" className={buttonVariants({ variant: "ghost", size: "sm", className: "text-primary font-semibold text-xs h-7 px-2" })}>
                   Ver todos <ArrowRight className="ml-1 h-3 w-3" />
                 </Link>
@@ -89,6 +112,50 @@ export default async function Home() {
                 ))}
               </div>
             </section>
+            <section className="pt-4 border-t border-border/40">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-lg font-extrabold marca-line">Síguenos</h2>
+              </div>
+              <div className="bg-card border border-border/60 rounded-lg p-3 space-y-1 shadow-sm">
+                <a
+                  href="https://facebook.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2.5 rounded hover:bg-[#1877F2]/5 text-foreground/80 hover:text-[#1877F2] transition-colors duration-150 group"
+                >
+                  <FaFacebook className="w-4 h-4 text-foreground/50 group-hover:text-[#1877F2] transition-colors" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Facebook</span>
+                </a>
+                <a
+                  href="https://instagram.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2.5 rounded hover:bg-[#E4405F]/5 text-foreground/80 hover:text-[#E4405F] transition-colors duration-150 group"
+                >
+                  <FaInstagram className="w-4 h-4 text-foreground/50 group-hover:text-[#E4405F] transition-colors" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Instagram</span>
+                </a>
+                <a
+                  href="https://twitter.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2.5 rounded hover:bg-black/5 dark:hover:bg-white/5 text-foreground/80 hover:text-black dark:hover:text-white transition-colors duration-150 group"
+                >
+                  <FaTwitter className="w-4 h-4 text-foreground/50 group-hover:text-black dark:group-hover:text-white transition-colors" />
+                  <span className="text-xs font-bold uppercase tracking-wider">Twitter / X</span>
+                </a>
+                <a
+                  href="https://youtube.com"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-3 p-2.5 rounded hover:bg-[#FF0000]/5 text-foreground/80 hover:text-[#FF0000] transition-colors duration-150 group"
+                >
+                  <FaYoutube className="w-4 h-4 text-foreground/50 group-hover:text-[#FF0000] transition-colors" />
+                  <span className="text-xs font-bold uppercase tracking-wider">YouTube</span>
+                </a>
+              </div>
+            </section>
+
           </div>
 
           {/* ── COL 2: NOTICIAS (50%) ────────────────── */}

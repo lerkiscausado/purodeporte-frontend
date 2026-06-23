@@ -206,6 +206,7 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
   const [loadingJugadores, setLoadingJugadores] = useState<boolean>(true);
   
   const [planillaList, setPlanillaList] = useState<any[]>([]);
+  const [allPlanillasTorneo, setAllPlanillasTorneo] = useState<any[]>([]);
   const [loadingPlanilla, setLoadingPlanilla] = useState<boolean>(true);
 
   const router = useRouter();
@@ -228,6 +229,7 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
       }
 
       if (planResult.success && planResult.data) {
+        setAllPlanillasTorneo(planResult.data);
         // Filtrar planillas que corresponden a este equipo
         const teamPlanilla = planResult.data.filter(
           (p: any) => p.equipo?.id === equipo.id
@@ -248,10 +250,10 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
     loadData();
   }, [torneo.id, equipo.id]);
 
-  // Excluir jugadores que ya están inscritos en la planilla de este equipo y filtrar por el género de la rama
+  // Excluir jugadores que ya están inscritos en la planilla de cualquier equipo de este torneo y filtrar por el género de la rama
   const jugadoresDisponibles = allJugadores.filter((jug) => {
-    // 1. Excluir ya inscritos
-    const yaInscrito = planillaList.some((p) => p.jugador?.id === jug.id);
+    // 1. Excluir ya inscritos en el torneo
+    const yaInscrito = allPlanillasTorneo.some((p) => p.jugador?.id === jug.id);
     if (yaInscrito) return false;
 
     // 2. Filtrar por rama del torneo (Masculino -> Hombre, Femenino -> Mujer, Mixto -> Todos)

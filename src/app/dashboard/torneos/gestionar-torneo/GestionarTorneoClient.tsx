@@ -41,6 +41,12 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
 
+  const isFutbol = torneo.deporte?.toLowerCase().includes("futbol") ||
+                   torneo.deporte?.toLowerCase().includes("fútbol") ||
+                   torneo.deporte?.toLowerCase().includes("soccer") ||
+                   torneo.deporte?.toLowerCase().includes("golito") ||
+                   torneo.deporte?.toLowerCase().includes("microfutbol");
+
   const [activeTab, setActiveTab] = useState<"partidos" | "equipos" | "resumen">("partidos");
 
   // Estados para la edición del torneo
@@ -512,101 +518,131 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                   </Link>
                 </div>
               ) : (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="border-b border-border/60 bg-muted/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-                        <th className="text-left px-6 py-3">Nombre del Equipo</th>
-                        <th className="text-left px-6 py-3">Delegado</th>
-                        <th className="text-left px-6 py-3">Contacto</th>
-                        <th className="text-center px-3 py-3 text-foreground/80" title="Partidos Jugados">PJ</th>
-                        <th className="text-center px-3 py-3 text-green-500/80" title="Partidos Ganados">PG</th>
-                        <th className="text-center px-3 py-3 text-amber-500/80" title="Partidos Empatados">PE</th>
-                        <th className="text-center px-3 py-3 text-rose-500/80" title="Partidos Perdidos">PP</th>
-                        <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles a Favor">PF</th>
-                        <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles en Contra">PC</th>
-                        <th className="text-center px-3 py-3" title="Diferencia de Puntos/Goles">DG</th>
-                        <th className="text-center px-3 py-3 text-primary font-black bg-primary/5" title="Puntos Totales">PTS</th>
-                        <th className="text-center px-6 py-3">Estado</th>
-                        <th className="text-right px-6 py-3">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {inscripciones.map((insc, idx) => (
-                        <tr key={insc.id || idx} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
-                          <td className="px-6 py-3.5 font-bold uppercase text-xs tracking-tight text-foreground">
-                            <div className="flex items-center gap-3">
-                              {insc.equipo?.foto ? (
-                                <img
-                                  src={insc.equipo.foto}
-                                  alt={insc.equipo.nombre}
-                                  className="h-8 w-8 rounded-full object-cover border border-border/60 shrink-0"
-                                />
-                              ) : (
-                                <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[10px] font-black text-white bg-gradient-to-br shadow-sm uppercase ${getGradientBg(insc.equipo?.nombre || "EQ")}`}>
-                                  {getInitials(insc.equipo?.nombre || "EQ")}
-                                </div>
-                              )}
-                              <span className="truncate">{insc.equipo?.nombre || "Equipo sin nombre"}</span>
-                            </div>
-                          </td>
-                          <td className="px-6 py-3.5 text-xs text-muted-foreground">{insc.equipo?.representante || "—"}</td>
-                          <td className="px-6 py-3.5 text-xs text-muted-foreground">
-                            {insc.equipo?.telefono || insc.equipo?.correo ? (
-                              <div className="flex flex-col">
-                                {insc.equipo.telefono && <span className="font-semibold text-foreground/80">{insc.equipo.telefono}</span>}
-                                {insc.equipo.correo && <span className="text-[10px] opacity-75">{insc.equipo.correo}</span>}
-                              </div>
-                            ) : (
-                              "—"
+                (() => {
+                  const sortedInscripciones = [...inscripciones].sort((a, b) => {
+                    const ptsDiff = (b.puntos ?? 0) - (a.puntos ?? 0);
+                    if (ptsDiff !== 0) return ptsDiff;
+                    
+                    const difDiff = (b.diferencia ?? 0) - (a.diferencia ?? 0);
+                    if (difDiff !== 0) return difDiff;
+                    
+                    return (b.puntosFavor ?? 0) - (a.puntosFavor ?? 0);
+                  });
+
+                  return (
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="border-b border-border/60 bg-muted/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                            <th className="text-center px-4 py-3">Posición</th>
+                            <th className="text-left px-6 py-3">Nombre del Equipo</th>
+                            <th className="text-left px-6 py-3">Delegado</th>
+                            <th className="text-left px-6 py-3">Contacto</th>
+                            <th className="text-center px-3 py-3 text-foreground/80" title="Partidos Jugados">PJ</th>
+                            <th className="text-center px-3 py-3 text-green-500/80" title="Partidos Ganados">PG</th>
+                            {isFutbol && (
+                              <th className="text-center px-3 py-3 text-amber-500/80" title="Partidos Empatados">PE</th>
                             )}
-                          </td>
-                          {/* Estadísticas de Inscripción */}
-                          <td className="px-3 py-3.5 text-center font-bold text-xs text-foreground/90">{insc.partidosJugados ?? 0}</td>
-                          <td className="px-3 py-3.5 text-center font-bold text-xs text-green-500">{insc.partidosGanados ?? 0}</td>
-                          <td className="px-3 py-3.5 text-center font-bold text-xs text-amber-500">{insc.partidosEmpatados ?? 0}</td>
-                          <td className="px-3 py-3.5 text-center font-bold text-xs text-rose-500">{insc.partidosPerdidos ?? 0}</td>
-                          <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosFavor ?? 0}</td>
-                          <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosContra ?? 0}</td>
-                          <td className={cn(
-                            "px-3 py-3.5 text-center font-black text-xs",
-                            (insc.diferencia ?? 0) > 0 ? "text-emerald-500" : (insc.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"
-                          )}>
-                            {(insc.diferencia ?? 0) > 0 ? `+${insc.diferencia}` : insc.diferencia ?? 0}
-                          </td>
-                          <td className="px-3 py-3.5 text-center font-black text-xs text-primary bg-primary/5">{insc.puntos ?? 0}</td>
-                          
-                          <td className="px-6 py-3.5 text-center">
-                            <span className="inline-flex px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 border-green-500/20">
-                              {insc.estado || "Activo"}
-                            </span>
-                          </td>
-                          <td className="px-6 py-3.5 text-right flex items-center justify-end gap-1.5">
-                            <Link href={`/dashboard/torneos/gestionar-torneo/inscribir-planilla?id=${torneo.id}&equipoId=${insc.equipo?.id}`}>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                title="Gestionar Planilla de Jugadores"
-                                className="h-8 w-8 text-sky-400 hover:bg-sky-500/10 hover:text-sky-300 rounded-sm"
-                              >
-                                <FaClipboardList className="h-4 w-4" />
-                              </Button>
-                            </Link>
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              onClick={() => handleEliminarInscripcion(insc.id)}
-                              title="Eliminar Inscripción de Equipo"
-                              className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm"
-                            >
-                              <FaTrash className="h-3.5 w-3.5" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <th className="text-center px-3 py-3 text-rose-500/80" title="Partidos Perdidos">PP</th>
+                            <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles a Favor">PF</th>
+                            <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles en Contra">PC</th>
+                            <th className="text-center px-3 py-3" title="Diferencia de Puntos/Goles">DG</th>
+                            <th className="text-center px-3 py-3 text-primary font-black bg-primary/5" title="Puntos Totales">PTS</th>
+                            <th className="text-center px-6 py-3">Estado</th>
+                            <th className="text-right px-6 py-3">Acción</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {sortedInscripciones.map((insc, idx) => (
+                            <tr key={insc.id || idx} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
+                              <td className="px-4 py-3.5 text-center">
+                                <span className={cn(
+                                  "inline-flex items-center justify-center h-6 w-6 rounded-full text-[10px] font-black",
+                                  idx === 0 ? "bg-amber-500/20 text-amber-500 border border-amber-500/30" :
+                                  idx === 1 ? "bg-slate-400/20 text-slate-400 border border-slate-400/30" :
+                                  idx === 2 ? "bg-orange-600/20 text-orange-500 border border-orange-600/30" :
+                                  "text-muted-foreground/60"
+                                )}>
+                                  {idx + 1}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3.5 font-bold uppercase text-xs tracking-tight text-foreground">
+                                <div className="flex items-center gap-3">
+                                  {insc.equipo?.foto ? (
+                                    <img
+                                      src={insc.equipo.foto}
+                                      alt={insc.equipo.nombre}
+                                      className="h-8 w-8 rounded-full object-cover border border-border/60 shrink-0"
+                                    />
+                                  ) : (
+                                    <div className={`h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-[10px] font-black text-white bg-gradient-to-br shadow-sm uppercase ${getGradientBg(insc.equipo?.nombre || "EQ")}`}>
+                                      {getInitials(insc.equipo?.nombre || "EQ")}
+                                    </div>
+                                  )}
+                                  <span className="truncate">{insc.equipo?.nombre || "Equipo sin nombre"}</span>
+                                </div>
+                              </td>
+                              <td className="px-6 py-3.5 text-xs text-muted-foreground">{insc.equipo?.representante || "—"}</td>
+                              <td className="px-6 py-3.5 text-xs text-muted-foreground">
+                                {insc.equipo?.telefono || insc.equipo?.correo ? (
+                                  <div className="flex flex-col">
+                                    {insc.equipo.telefono && <span className="font-semibold text-foreground/80">{insc.equipo.telefono}</span>}
+                                    {insc.equipo.correo && <span className="text-[10px] opacity-75">{insc.equipo.correo}</span>}
+                                  </div>
+                                ) : (
+                                  "—"
+                                )}
+                              </td>
+                              {/* Estadísticas de Inscripción */}
+                              <td className="px-3 py-3.5 text-center font-bold text-xs text-foreground/90">{insc.partidosJugados ?? 0}</td>
+                              <td className="px-3 py-3.5 text-center font-bold text-xs text-green-500">{insc.partidosGanados ?? 0}</td>
+                              {isFutbol && (
+                                <td className="px-3 py-3.5 text-center font-bold text-xs text-amber-500">{insc.partidosEmpatados ?? 0}</td>
+                              )}
+                              <td className="px-3 py-3.5 text-center font-bold text-xs text-rose-500">{insc.partidosPerdidos ?? 0}</td>
+                              <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosFavor ?? 0}</td>
+                              <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosContra ?? 0}</td>
+                              <td className={cn(
+                                "px-3 py-3.5 text-center font-black text-xs",
+                                (insc.diferencia ?? 0) > 0 ? "text-emerald-500" : (insc.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"
+                              )}>
+                                {(insc.diferencia ?? 0) > 0 ? `+${insc.diferencia}` : insc.diferencia ?? 0}
+                              </td>
+                              <td className="px-3 py-3.5 text-center font-black text-xs text-primary bg-primary/5">{insc.puntos ?? 0}</td>
+                              
+                              <td className="px-6 py-3.5 text-center">
+                                <span className="inline-flex px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 border-green-500/20">
+                                  {insc.estado || "Activo"}
+                                </span>
+                              </td>
+                              <td className="px-6 py-3.5 text-right flex items-center justify-end gap-1.5">
+                                <Link href={`/dashboard/torneos/gestionar-torneo/inscribir-planilla?id=${torneo.id}&equipoId=${insc.equipo?.id}`}>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    title="Gestionar Planilla de Jugadores"
+                                    className="h-8 w-8 text-sky-400 hover:bg-sky-500/10 hover:text-sky-300 rounded-sm"
+                                  >
+                                    <FaClipboardList className="h-4 w-4" />
+                                  </Button>
+                                </Link>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleEliminarInscripcion(insc.id)}
+                                  title="Eliminar Inscripción de Equipo"
+                                  className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm"
+                                >
+                                  <FaTrash className="h-3.5 w-3.5" />
+                                </Button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  );
+                })()
               )}
             </CardContent>
           </Card>

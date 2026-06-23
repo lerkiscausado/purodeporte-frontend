@@ -62,11 +62,18 @@ export async function Navbar() {
               />
             </div>
           ) : (
-            <Link href="/login" className="hidden md:block">
-              <Button variant="default" className="font-bold rounded-full px-6 shadow-primary/25 shadow-lg">
-                Iniciar Sesión
-              </Button>
-            </Link>
+            <div className="hidden md:flex items-center gap-3">
+              <Link href="/login">
+                <Button variant="ghost" className="font-bold rounded-full text-white hover:text-primary hover:bg-white/10 px-4 border border-white/30 hover:border-white/60 transition-colors">
+                  Entrar
+                </Button>
+              </Link>
+              <Link href="/register">
+                <Button variant="default" className="font-bold rounded-full px-6 shadow-primary/25 shadow-lg">
+                  Registrarse
+                </Button>
+              </Link>
+            </div>
           )}
 
           <Button variant="ghost" size="icon" className="md:hidden text-white/80 hover:text-white hover:bg-white/10">

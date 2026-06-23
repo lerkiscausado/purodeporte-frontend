@@ -26,7 +26,7 @@ import {
 } from "react-icons/fa";
 import Link from "next/link";
 import { getEscenarios } from "@/app/actions/escenarios";
-import { getEquipos } from "@/app/actions/equipos";
+import { getInscripcionesPorTorneo } from "@/app/actions/inscripciones";
 import { createPartido } from "@/app/actions/partidos";
 import { SelectSearch } from "@/components/SelectSearch";
 import { cn } from "@/lib/utils";
@@ -236,10 +236,14 @@ export function ProgramarPartidoClient({ torneo }: ProgramarPartidoClientProps) 
   const router = useRouter();
 
   // Load scenarios and teams on mount
+  // Load scenarios and registered teams on mount
   useEffect(() => {
     async function loadData() {
       try {
-        const [escResult, eqResult] = await Promise.all([getEscenarios(), getEquipos()]);
+        const [escResult, insResult] = await Promise.all([
+          getEscenarios(),
+          getInscripcionesPorTorneo(Number(torneo.id)),
+        ]);
 
         if (escResult.success && escResult.data) {
           setEscenarios(escResult.data);
@@ -247,10 +251,11 @@ export function ProgramarPartidoClient({ torneo }: ProgramarPartidoClientProps) 
           console.error("Error al cargar escenarios:", escResult.error);
         }
 
-        if (eqResult.success && eqResult.data) {
-          setEquipos(eqResult.data);
+        if (insResult.success && insResult.data) {
+          const equiposInscritos = insResult.data.map((insc: any) => insc.equipo);
+          setEquipos(equiposInscritos);
         } else {
-          console.error("Error al cargar equipos:", eqResult.error);
+          console.error("Error al cargar equipos inscritos:", insResult.error);
         }
       } catch (err) {
         console.error("Excepción al cargar datos:", err);
@@ -260,31 +265,10 @@ export function ProgramarPartidoClient({ torneo }: ProgramarPartidoClientProps) 
       }
     }
     loadData();
-  }, []);
+  }, [torneo.id]);
 
-  // Helper de filtrado por deporte
-  const isSportMatching = (torneoDeporte: string, equipoDeporte: string) => {
-    if (!torneoDeporte || !equipoDeporte) return false;
-    const tDep = torneoDeporte.toLowerCase();
-    const eDep = equipoDeporte.toLowerCase();
-
-    // fútbol, futsal, golito, microfútbol son variantes de fútbol
-    if (tDep.includes("futbol") || tDep.includes("fútbol") || tDep.includes("soccer") || tDep.includes("golito") || tDep.includes("microfutbol") || tDep.includes("futsal")) {
-      return eDep.includes("futbol") || eDep.includes("fútbol") || eDep.includes("soccer") || eDep.includes("golito") || eDep.includes("microfutbol") || eDep.includes("futsal");
-    }
-    if (tDep.includes("basket") || tDep.includes("baloncesto")) {
-      return eDep.includes("basket") || eDep.includes("baloncesto");
-    }
-    if (tDep.includes("voley") || tDep.includes("voleibol")) {
-      return eDep.includes("voley") || eDep.includes("voleibol");
-    }
-    return false;
-  };
-
-  // Filtrar equipos del mismo deporte que el torneo
-  const equiposFiltrados = equipos.filter((equipo) =>
-    isSportMatching(torneo.deporte, equipo.deporte)
-  );
+  // Solo los equipos inscritos en el torneo
+  const equiposFiltrados = equipos;
 
   // Mapear iconos pequeños por deporte
   const getSportIcon = (deporte: string) => {

@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useTransition } from "react";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   FaUsers,
   FaPlus,
@@ -12,6 +13,8 @@ import {
   FaThLarge,
   FaList,
   FaSearch,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import { EditJugadorModal } from "@/components/EditJugadorModal";
 import { DeleteJugadorButton } from "@/components/DeleteJugadorButton";
@@ -21,14 +24,87 @@ import { cn } from "@/lib/utils";
 
 interface JugadoresListClientProps {
   initialJugadores: any[];
+  totalJugadores: number;
   baseUrl: string;
   canModifyOrDelete: boolean;
 }
 
-export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDelete }: JugadoresListClientProps) {
+export function JugadoresListClient({ initialJugadores, totalJugadores, baseUrl, canModifyOrDelete }: JugadoresListClientProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
-  const [search, setSearch] = useState("");
-  const [genderFilter, setGenderFilter] = useState("all");
+
+  // Keep a local search input state so typing is fast and doesn't wait for routing
+  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const genderFilter = searchParams.get("gender") || "all";
+  const currentPage = parseInt(searchParams.get("page") || "1", 10);
+  const ITEMS_PER_PAGE = 15;
+
+  // Sync local search state with search query param if it changes from outside
+  useEffect(() => {
+    setSearch(searchParams.get("search") || "");
+  }, [searchParams]);
+
+  // Debounced URL updates when typing search term
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      const currentSearchParam = searchParams.get("search") || "";
+      if (search !== currentSearchParam) {
+        if (search.length >= 4 || search.length === 0) {
+          const params = new URLSearchParams(searchParams.toString());
+          if (search) {
+            params.set("search", search);
+          } else {
+            params.delete("search");
+          }
+          params.set("page", "1"); // Reset to page 1
+          startTransition(() => {
+            router.push(`${pathname}?${params.toString()}`);
+          });
+        } else if (currentSearchParam) {
+          // Reset search parameter if search term length is under 4 characters and a search parameter is currently set
+          const params = new URLSearchParams(searchParams.toString());
+          params.delete("search");
+          params.set("page", "1");
+          startTransition(() => {
+            router.push(`${pathname}?${params.toString()}`);
+          });
+        }
+      }
+    }, 2000);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [search, searchParams, pathname, router]);
+
+  const handleGenderFilterChange = (newGender: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (newGender && newGender !== "all") {
+      params.set("gender", newGender);
+    } else {
+      params.delete("gender");
+    }
+    params.set("page", "1"); // Reset to page 1
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  const handlePageChange = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", newPage.toString());
+    startTransition(() => {
+      router.push(`${pathname}?${params.toString()}`);
+    });
+  };
+
+  // The backend already returns paginated results under initialJugadores!
+  const jugadores = initialJugadores;
+
+  const totalPages = Math.ceil(totalJugadores / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
 
   // Get full photo URL
   const getFotoUrl = (foto: string) => {
@@ -68,17 +144,36 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
     }
   };
 
-  // Filter jugadores
-  const filteredJugadores = initialJugadores.filter((jugador) => {
-    const fullName = `${jugador.nombre} ${jugador.apellidos}`.toLowerCase();
-    const matchesSearch =
-      fullName.includes(search.toLowerCase()) ||
-      (jugador.identificacion && jugador.identificacion.includes(search));
+  const getPageNumbers = () => {
+    const pages: (number | string)[] = [];
+    const maxVisiblePages = 5;
     
-    const matchesGender = genderFilter === "all" || jugador.genero === genderFilter;
-
-    return matchesSearch && matchesGender;
-  });
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      pages.push(1);
+      
+      const start = Math.max(2, currentPage - 1);
+      const end = Math.min(totalPages - 1, currentPage + 1);
+      
+      if (start > 2) {
+        pages.push("...");
+      }
+      
+      for (let i = start; i <= end; i++) {
+        pages.push(i);
+      }
+      
+      if (end < totalPages - 1) {
+        pages.push("...");
+      }
+      
+      pages.push(totalPages);
+    }
+    return pages;
+  };
 
   const getInitials = (nombre: string, apellidos: string) => {
     const first = nombre ? nombre.slice(0, 1) : "";
@@ -128,7 +223,7 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
           
           <select
             value={genderFilter}
-            onChange={(e) => setGenderFilter(e.target.value)}
+            onChange={(e) => handleGenderFilterChange(e.target.value)}
             className="h-10 px-3 bg-card border border-border/60 rounded-sm text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary uppercase tracking-wider text-xs shrink-0"
           >
             <option value="all">TODOS LOS GÉNEROS</option>
@@ -169,7 +264,7 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
       </div>
 
       {/* Resultados de la lista */}
-      {filteredJugadores.length === 0 ? (
+      {totalJugadores === 0 ? (
         <div className="flex flex-col items-center justify-center p-12 text-center border border-dashed border-border/60 bg-muted/10 rounded-sm space-y-3">
           <div className="flex items-center justify-center h-12 w-12 rounded-sm bg-primary/10 text-primary">
             <FaUsers className="h-6 w-6" />
@@ -181,8 +276,8 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
         </div>
       ) : viewMode === "cards" ? (
         /* VISTA DE TARJETAS (CARDS) - ESTÉTICA PREMIUM */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredJugadores.map((jugador) => {
+        <div className={cn("grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 transition-opacity duration-200", isPending && "opacity-60 pointer-events-none")}>
+          {jugadores.map((jugador) => {
             const fullName = `${jugador.nombre} ${jugador.apellidos}`;
             return (
               <div
@@ -296,7 +391,7 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
         </div>
       ) : (
         /* VISTA DE TABLA (TABLE) */
-        <div className="border border-border/60 rounded-sm shadow-md overflow-hidden bg-card animate-in fade-in-50 duration-300">
+        <div className={cn("border border-border/60 rounded-sm shadow-md overflow-hidden bg-card animate-in fade-in-50 duration-300 transition-opacity duration-200", isPending && "opacity-60 pointer-events-none")}>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -314,7 +409,7 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
                 </tr>
               </thead>
               <tbody>
-                {filteredJugadores.map((jugador, index) => (
+                {jugadores.map((jugador, index) => (
                   <tr
                     key={jugador.id}
                     className={`border-b border-border/40 hover:bg-muted/10 transition-colors ${index % 2 === 0 ? "" : "bg-muted/5"}`}
@@ -401,6 +496,75 @@ export function JugadoresListClient({ initialJugadores, baseUrl, canModifyOrDele
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-sm border border-border/60 shadow-sm mt-6 animate-in fade-in-50 duration-300">
+          <div className="text-xs font-black uppercase tracking-wider text-muted-foreground">
+            Mostrando {startIndex + 1} - {Math.min(startIndex + jugadores.length, totalJugadores)} de {totalJugadores} jugadores
+          </div>
+          <div className="flex items-center gap-1 bg-muted/40 p-1 border border-border/60 rounded-sm">
+            <button
+              disabled={currentPage === 1}
+              onClick={() => handlePageChange(Math.max(currentPage - 1, 1))}
+              className={cn(
+                "h-8 px-2 flex items-center justify-center text-xs font-bold uppercase rounded-sm transition-all duration-150",
+                currentPage === 1
+                  ? "text-muted-foreground/40 cursor-not-allowed"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              )}
+              title="Página Anterior"
+            >
+              <FaChevronLeft className="h-3 w-3 mr-1" />
+              <span>Anterior</span>
+            </button>
+
+            {/* Page buttons */}
+            {getPageNumbers().map((page, index) => {
+              if (page === "...") {
+                return (
+                  <span
+                    key={`ellipsis-${index}`}
+                    className="min-w-[32px] h-8 flex items-center justify-center text-xs font-bold text-muted-foreground/40 select-none"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              return (
+                <button
+                  key={page}
+                  onClick={() => handlePageChange(Number(page))}
+                  className={cn(
+                    "min-w-[32px] h-8 flex items-center justify-center text-xs font-bold rounded-sm transition-all duration-150",
+                    currentPage === page
+                      ? "bg-primary text-primary-foreground shadow-sm font-black"
+                      : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                  )}
+                >
+                  {page}
+                </button>
+              );
+            })}
+
+            <button
+              disabled={currentPage === totalPages}
+              onClick={() => handlePageChange(Math.min(currentPage + 1, totalPages))}
+              className={cn(
+                "h-8 px-2 flex items-center justify-center text-xs font-bold uppercase rounded-sm transition-all duration-150",
+                currentPage === totalPages
+                  ? "text-muted-foreground/40 cursor-not-allowed"
+                  : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+              )}
+              title="Página Siguiente"
+            >
+              <span>Siguiente</span>
+              <FaChevronRight className="h-3 w-3 ml-1" />
+            </button>
           </div>
         </div>
       )}
