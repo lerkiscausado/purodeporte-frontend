@@ -1,36 +1,53 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Puro Deporte - Frontend
 
-## Getting Started
+Aplicación web pública y dashboard administrativo de **Puro Deporte**, desarrollada con [Next.js 16 (App Router)](https://nextjs.org), TypeScript y TailwindCSS.
 
-First, run the development server:
+---
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+## 🚀 Desarrollo Local
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+1. Instalar dependencias:
+   ```bash
+   npm install
+   ```
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+2. Configurar variables de entorno copiando `.env.example` a `.env`:
+   ```bash
+   cp .env.example .env
+   ```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. Iniciar el servidor de desarrollo:
+   ```bash
+   npm run dev
+   ```
+   Abre [http://localhost:3000](http://localhost:3000) en el navegador.
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## 🐳 Despliegue con Docker
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+El proyecto está configurado para compilación optimizada `standalone` en contenedores Docker.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### Construir y Levantar el Contenedor
 
-## Deploy on Vercel
+1. Crear el archivo `.env` en el servidor basándote en `.env.example`:
+   ```env
+   NEXT_PUBLIC_API_URL=https://purodeporte.co/api
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+2. Construir la imagen y ejecutar el servicio:
+   ```bash
+   docker compose build
+   docker compose up -d
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+3. El contenedor escuchará internamente en el puerto `3000` y se mapeará al puerto `3001` del host.
+
+### 🌐 Arquitectura de Dominio y Reverse Proxy (Nginx)
+
+Este proyecto se despliega en el mismo servidor VPS junto al backend (`puro-deportes-backend`). Ambos comparten el mismo dominio público (`https://purodeporte.co`) mediante **Nginx**:
+
+- **Ruta Raíz (`/`)**: Enrutada por Nginx al frontend (puerto `3001` del host).
+- **Ruta API (`/api/*`) y Archivos (`/uploads/*`)**: Enrutados por Nginx al backend (puerto `3000` del host).
+
+> Para más detalles sobre la configuración de Nginx y SSL en el VPS, consulta el archivo `DEPLOY.md` en el repositorio del backend.
