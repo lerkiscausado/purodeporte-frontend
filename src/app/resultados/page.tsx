@@ -1,6 +1,8 @@
 import { TablaResultados } from "@/components/TablaResultados";
 import { getResultados } from "@/services/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function ResultadosPage() {
   const resultados = await getResultados();
 

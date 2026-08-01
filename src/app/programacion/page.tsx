@@ -1,6 +1,8 @@
 import { PartidoItem } from "@/components/PartidoItem";
 import { getProgramacion } from "@/services/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function ProgramacionPage() {
   const programacion = await getProgramacion();
 

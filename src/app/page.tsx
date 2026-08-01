@@ -2,32 +2,23 @@ import { CardNoticia } from "@/components/CardNoticia";
 import { CardTorneo } from "@/components/CardTorneo";
 import { PartidoItem } from "@/components/PartidoItem";
 import { TablaResultados } from "@/components/TablaResultados";
-import { getNoticias, getProgramacion, getResultados, getTorneos } from "@/services/api";
+import { getNoticias, getProgramacion, getResultados, getTorneos, getTorneosGrouped } from "@/services/api";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { DeportesAccordion } from "@/components/DeportesAccordion";
 import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
-  const [noticias, torneos, programacion, resultados] = await Promise.all([
+  const [noticias, torneos, programacion, resultados, deportesData] = await Promise.all([
     getNoticias(),
     getTorneos(),
     getProgramacion(),
-    getResultados()
+    getResultados(),
+    getTorneosGrouped()
   ]);
-
-  // Obtener torneos agrupados por deporte desde la API
-  let deportesData = { deportes: {} };
-  try {
-    const baseUrl = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000").replace(/\/api$/, "");
-    const res = await fetch(`${baseUrl}/torneos/public`, { cache: "no-store" });
-    if (res.ok) {
-      deportesData = await res.json();
-    }
-  } catch (error) {
-    console.error("Error fetching public tournaments:", error);
-  }
 
   // Encontrar partido en vivo o el próximo
   const partidoDestacado = programacion[0];

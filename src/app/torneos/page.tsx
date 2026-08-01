@@ -1,6 +1,8 @@
 import { CardTorneo } from "@/components/CardTorneo";
 import { getTorneos } from "@/services/api";
 
+export const dynamic = "force-dynamic";
+
 export default async function TorneosPage() {
   const torneos = await getTorneos();
 
