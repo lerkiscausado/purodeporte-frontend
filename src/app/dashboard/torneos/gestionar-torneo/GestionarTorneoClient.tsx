@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useTransition } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { updateTorneo } from "@/app/actions/torneos";
@@ -39,6 +39,7 @@ interface GestionarTorneoClientProps {
 
 export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTorneoClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [isPending, startTransition] = useTransition();
 
   const isFutbol = torneo.deporte?.toLowerCase().includes("futbol") ||
@@ -51,15 +52,19 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
 
   // Estados para la edición del torneo
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  const [prevTorneo, setPrevTorneo] = useState(torneo);
   const [editName, setEditName] = useState(torneo.name);
   const [editEstado, setEditEstado] = useState(torneo.estado);
-  const [editError, setEditError] = useState<string | null>(null);
-  const [editSuccess, setEditSuccess] = useState(false);
 
-  useEffect(() => {
+  if (torneo !== prevTorneo) {
+    setPrevTorneo(torneo);
     setEditName(torneo.name);
     setEditEstado(torneo.estado);
-  }, [torneo]);
+  }
+
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editSuccess, setEditSuccess] = useState(false);
 
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -94,10 +99,15 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [loadingInscripciones, setLoadingInscripciones] = useState<boolean>(true);
 
+  const [prevTorneoId, setPrevTorneoId] = useState(torneo.id);
+  if (torneo.id !== prevTorneoId) {
+    setPrevTorneoId(torneo.id);
+    setLoadingInscripciones(true);
+  }
+
   // Cargar datos del servidor
   const loadInscripciones = async () => {
     try {
-      setLoadingInscripciones(true);
       const res = await getInscripcionesPorTorneo(Number(torneo.id));
       if (res.success && res.data) {
         setInscripciones(res.data);
@@ -112,19 +122,19 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadInscripciones();
   }, [torneo.id]);
 
   // Leer la pestaña activa desde la URL al cargar
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const tab = params.get("tab");
-      if (tab === "equipos" || tab === "partidos" || tab === "resumen") {
-        setActiveTab(tab);
-      }
+  const tabParam = searchParams.get("tab");
+  const [prevTabParam, setPrevTabParam] = useState(tabParam);
+  if (tabParam !== prevTabParam) {
+    setPrevTabParam(tabParam);
+    if (tabParam === "equipos" || tabParam === "partidos" || tabParam === "resumen") {
+      setActiveTab(tabParam);
     }
-  }, []);
+  }
 
   // Manejar eliminación de inscripción
   const handleEliminarInscripcion = async (inscripcionId: number) => {

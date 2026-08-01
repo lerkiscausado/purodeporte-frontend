@@ -9,6 +9,7 @@ interface DatePickerStripProps {
 }
 
 export function DatePickerStrip({ selectedDate, onChange }: DatePickerStripProps) {
+  const [prevSelectedDate, setPrevSelectedDate] = useState(selectedDate);
   // Inicializar currentWeekStart en el domingo de la semana de la fecha seleccionada
   const [currentWeekStart, setCurrentWeekStart] = useState<Date>(() => {
     const d = new Date(selectedDate);
@@ -19,10 +20,8 @@ export function DatePickerStrip({ selectedDate, onChange }: DatePickerStripProps
     return sunday;
   });
 
-  const hiddenInputRef = useRef<HTMLInputElement>(null);
-
-  // Alinear el inicio de la semana cuando la fecha seleccionada cambia externamente
-  useEffect(() => {
+  if (selectedDate.getTime() !== prevSelectedDate.getTime()) {
+    setPrevSelectedDate(selectedDate);
     const d = new Date(selectedDate);
     const day = d.getDay();
     const diff = d.getDate() - day;
@@ -35,7 +34,9 @@ export function DatePickerStrip({ selectedDate, onChange }: DatePickerStripProps
     if (sunday.getTime() !== currentStart.getTime()) {
       setCurrentWeekStart(sunday);
     }
-  }, [selectedDate]);
+  }
+
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
 
   // Generar los 7 días de la semana a partir de currentWeekStart
   const days = Array.from({ length: 7 }).map((_, i) => {

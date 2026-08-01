@@ -88,10 +88,15 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
   const isVoley = deporteKey === "VOLEY";
   const savedRegularPeriodsCount = periodos.filter((p) => p.tipoPeriodo === "Regular").length;
 
+  const [prevPartidoId, setPrevPartidoId] = useState(partido.id);
+  if (partido.id !== prevPartidoId) {
+    setPrevPartidoId(partido.id);
+    setLoading(true);
+  }
+
   // Cargar periodos del partido
   const loadPeriodos = async () => {
     try {
-      setLoading(true);
       const res = await getPeriodosPorPartido(partido.id);
       if (res.success && res.data) {
         setPeriodos(res.data);
@@ -107,6 +112,7 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadPeriodos();
   }, [partido.id]);
 

@@ -211,12 +211,16 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
 
   const router = useRouter();
 
+  const [prevIds, setPrevIds] = useState({ torneoId: torneo.id, equipoId: equipo.id });
+  if (torneo.id !== prevIds.torneoId || equipo.id !== prevIds.equipoId) {
+    setPrevIds({ torneoId: torneo.id, equipoId: equipo.id });
+    setLoadingJugadores(true);
+    setLoadingPlanilla(true);
+  }
+
   // Cargar jugadores y planilla actual del torneo
   const loadData = async () => {
     try {
-      setLoadingJugadores(true);
-      setLoadingPlanilla(true);
-
       const [jugResult, planResult] = await Promise.all([
         getJugadores(),
         getPlanillasPorTorneo(Number(torneo.id)),
@@ -247,6 +251,7 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
   };
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     loadData();
   }, [torneo.id, equipo.id]);
 

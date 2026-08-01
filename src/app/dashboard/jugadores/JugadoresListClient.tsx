@@ -38,15 +38,18 @@ export function JugadoresListClient({ initialJugadores, totalJugadores, baseUrl,
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
 
   // Keep a local search input state so typing is fast and doesn't wait for routing
-  const [search, setSearch] = useState(searchParams.get("search") || "");
+  const searchParamVal = searchParams.get("search") || "";
+  const [prevSearchParam, setPrevSearchParam] = useState(searchParamVal);
+  const [search, setSearch] = useState(searchParamVal);
+
+  if (searchParamVal !== prevSearchParam) {
+    setPrevSearchParam(searchParamVal);
+    setSearch(searchParamVal);
+  }
+
   const genderFilter = searchParams.get("gender") || "all";
   const currentPage = parseInt(searchParams.get("page") || "1", 10);
   const ITEMS_PER_PAGE = 15;
-
-  // Sync local search state with search query param if it changes from outside
-  useEffect(() => {
-    setSearch(searchParams.get("search") || "");
-  }, [searchParams]);
 
   // Debounced URL updates when typing search term
   useEffect(() => {

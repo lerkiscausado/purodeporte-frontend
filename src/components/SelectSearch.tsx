@@ -31,13 +31,13 @@ export function SelectSearch({
   loading = false,
   className
 }: SelectSearchProps) {
+  const selectedItem = items.find((item) => item.id === value);
+
   const [isOpen, setIsOpen] = useState(false);
-  const [searchTerm, setSearchTerm] = useState("");
+  const [prevValue, setPrevValue] = useState(value);
+  const [searchTerm, setSearchTerm] = useState(() => selectedItem ? selectedItem.nombre : "");
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  // Find the selected item to display its name in the trigger
-  const selectedItem = items.find((item) => item.id === value);
 
   // Handle click outside to close the dropdown
   useEffect(() => {
@@ -52,14 +52,10 @@ export function SelectSearch({
     };
   }, []);
 
-  // Update input text when selection changes
-  useEffect(() => {
-    if (selectedItem) {
-      setSearchTerm(selectedItem.nombre);
-    } else {
-      setSearchTerm("");
-    }
-  }, [value, selectedItem]);
+  if (value !== prevValue) {
+    setPrevValue(value);
+    setSearchTerm(selectedItem ? selectedItem.nombre : "");
+  }
 
   const handleInputFocus = () => {
     setIsOpen(true);
