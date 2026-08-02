@@ -73,7 +73,7 @@ export default async function EquiposListPage() {
           </Link>
         </div>
       ) : (
-        <EquiposListClient initialEquipos={equipos} baseUrl={getApiUrl()} />
+        <EquiposListClient initialEquipos={equipos} />
       )}
     </div>
   );

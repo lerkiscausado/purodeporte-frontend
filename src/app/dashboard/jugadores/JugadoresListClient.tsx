@@ -21,15 +21,15 @@ import { DeleteJugadorButton } from "@/components/DeleteJugadorButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface JugadoresListClientProps {
   initialJugadores: any[];
   totalJugadores: number;
-  baseUrl: string;
   canModifyOrDelete: boolean;
 }
 
-export function JugadoresListClient({ initialJugadores, totalJugadores, baseUrl, canModifyOrDelete }: JugadoresListClientProps) {
+export function JugadoresListClient({ initialJugadores, totalJugadores, canModifyOrDelete }: JugadoresListClientProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -108,16 +108,6 @@ export function JugadoresListClient({ initialJugadores, totalJugadores, baseUrl,
 
   const totalPages = Math.ceil(totalJugadores / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-
-  // Get full photo URL
-  const getFotoUrl = (foto: string) => {
-    if (!foto) return "";
-    if (foto.startsWith("http://") || foto.startsWith("https://") || foto.startsWith("data:")) {
-      return foto;
-    }
-    const cleanFoto = foto.startsWith("/") ? foto : `/${foto}`;
-    return `${baseUrl}${cleanFoto}`;
-  };
 
   // Calculate age from birthdate
   const calcAge = (fechaNacimiento: string) => {
@@ -307,7 +297,7 @@ export function JugadoresListClient({ initialJugadores, totalJugadores, baseUrl,
                   <div className="relative h-16 w-16 rounded-full bg-muted border-4 border-card shadow-md flex items-center justify-center overflow-hidden mb-2.5 shrink-0">
                     {jugador.foto ? (
                       <img
-                        src={getFotoUrl(jugador.foto)}
+                        src={getUploadUrl("jugadores", jugador.foto)}
                         alt={fullName}
                         className="absolute inset-0 h-full w-full object-cover bg-muted"
                         onError={(e) => {

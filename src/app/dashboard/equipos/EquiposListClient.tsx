@@ -20,27 +20,17 @@ import { DeleteEquipoButton } from "@/components/DeleteEquipoButton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 import Link from "next/link";
 
 interface EquiposListClientProps {
   initialEquipos: any[];
-  baseUrl: string;
 }
 
-export function EquiposListClient({ initialEquipos, baseUrl }: EquiposListClientProps) {
+export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
   const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
-
-  // Get full photo URL
-  const getFotoUrl = (foto: string) => {
-    if (!foto) return "";
-    if (foto.startsWith("http://") || foto.startsWith("https://") || foto.startsWith("data:")) {
-      return foto;
-    }
-    const cleanFoto = foto.startsWith("/") ? foto : `/${foto}`;
-    return `${baseUrl}${cleanFoto}`;
-  };
 
   // Get sport icon
   const getSportIcon = (deporte: string) => {
@@ -200,7 +190,7 @@ export function EquiposListClient({ initialEquipos, baseUrl }: EquiposListClient
                 <div className="relative h-16 w-16 rounded-full bg-muted border-4 border-card shadow-md flex items-center justify-center overflow-hidden mb-2.5 shrink-0">
                   {equipo.foto ? (
                     <img
-                      src={getFotoUrl(equipo.foto)}
+                      src={getUploadUrl("equipos", equipo.foto)}
                       alt={equipo.nombre}
                       className="absolute inset-0 h-full w-full object-cover bg-muted"
                       onError={(e) => {
@@ -305,7 +295,7 @@ export function EquiposListClient({ initialEquipos, baseUrl }: EquiposListClient
                           {getSportIcon(equipo.deporte)}
                           {equipo.foto && (
                             <img
-                              src={getFotoUrl(equipo.foto)}
+                              src={getUploadUrl("equipos", equipo.foto)}
                               alt={equipo.nombre}
                               className="absolute inset-0 h-full w-full object-cover bg-muted"
                               onError={(e) => {

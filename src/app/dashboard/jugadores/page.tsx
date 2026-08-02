@@ -111,7 +111,6 @@ export default async function JugadoresListPage({
         <JugadoresListClient
           initialJugadores={jugadores}
           totalJugadores={totalJugadores}
-          baseUrl={getApiUrl()}
           canModifyOrDelete={canModifyOrDelete}
         />
       )}
