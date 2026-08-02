@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import { EscenariosListClient } from "./EscenariosListClient";
+import { getApiUrl } from "@/lib/api-url";
 
 export default async function EscenariosListPage() {
   const cookieStore = await cookies();
@@ -18,19 +19,16 @@ export default async function EscenariosListPage() {
 
   const isAdmin = user.role === "admin";
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
   let escenarios: any[] = [];
   let errorMsg = "";
 
   if (token) {
     try {
-      const response = await fetch(`${baseUrl}/escenarios`, {
+      const response = await fetch(getApiUrl("escenarios"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        next: { revalidate: 0 }, // Evitar caché para datos en tiempo real
+        next: { revalidate: 0 },
       });
 
       if (response.ok) {

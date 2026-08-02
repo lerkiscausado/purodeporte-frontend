@@ -5,8 +5,9 @@ import { useRouter } from "next/navigation";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { FaEdit, FaCheck, FaTimes, FaFutbol, FaBasketballBall, FaVolleyballBall } from "react-icons/fa";
+import { FaEdit, FaCheck, FaTimes, FaFutbol, FaBasketballBall, FaVolleyballBall, FaImage } from "react-icons/fa";
 import { updateEquipo } from "@/app/actions/equipos";
+import { getUploadUrl } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
 
 interface EditEquipoModalProps {
@@ -243,16 +244,36 @@ export function EditEquipoModal({ equipo }: EditEquipoModalProps) {
               </div>
             </div>
 
-            {/* Foto (Opcional) */}
+            {/* Escudo / Foto (Opcional) */}
             <div className="space-y-2">
-              <Label htmlFor="edit-foto" className="font-bold">Ruta / URL de Logo o Foto <span className="text-muted-foreground font-normal text-xs">(opcional)</span></Label>
-              <Input
-                id="edit-foto"
-                name="foto"
-                defaultValue={equipo.foto || ""}
-                placeholder="Ej. /uploads/equipos/mi-logo.png"
-                className="h-12 bg-background/50 border-border rounded-sm w-full"
-              />
+              <Label htmlFor="edit-foto" className="font-bold text-sm">Cambiar Escudo (Opcional)</Label>
+
+              {equipo.foto && (
+                <div className="flex items-center gap-3 p-2 bg-muted/20 border border-border/40 rounded-sm mb-1">
+                  <div className="h-10 w-10 rounded-sm bg-muted overflow-hidden relative shrink-0 border border-border/60">
+                    <img
+                      src={getUploadUrl("equipos", equipo.foto)}
+                      alt={equipo.nombre}
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <span className="text-xs font-semibold text-muted-foreground">Escudo actual registrado</span>
+                </div>
+              )}
+
+              <div className="relative">
+                <Input
+                  id="edit-foto"
+                  name="foto"
+                  type="file"
+                  accept="image/*"
+                  className="bg-card file:bg-primary/10 file:text-primary file:border-0 file:rounded-sm file:px-3 file:py-1 file:mr-3 file:font-bold hover:file:bg-primary/20 cursor-pointer pt-2 text-xs border-border/60 rounded-sm h-12 pl-10"
+                />
+                <FaImage className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 h-4 w-4" />
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Deja este campo vacío para conservar el escudo actual.
+              </p>
             </div>
 
             {/* Mensajes de feedback */}

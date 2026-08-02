@@ -1,4 +1,4 @@
-import { PartidoItem } from "@/components/PartidoItem";
+import { ProgramacionPublicListClient } from "./ProgramacionPublicListClient";
 import { getProgramacion } from "@/services/api";
 
 export const dynamic = "force-dynamic";
@@ -12,12 +12,8 @@ export default async function ProgramacionPage() {
         <span className="bg-primary w-3 h-10 rounded-full inline-block"></span>
         Programación de Partidos
       </h1>
-      
-      <div className="max-w-4xl space-y-4">
-        {programacion.map((partido) => (
-          <PartidoItem key={partido.id} partido={partido} />
-        ))}
-      </div>
+
+      <ProgramacionPublicListClient initialProgramacion={programacion} />
     </div>
   );
 }

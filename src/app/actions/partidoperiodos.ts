@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function getPeriodosPorPartido(partidoId: number) {
   try {
@@ -11,10 +12,7 @@ export async function getPeriodosPorPartido(partidoId: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidoperiodos/partido/${partidoId}`, {
+    const response = await fetch(getApiUrl(`partidoperiodos/partido/${partidoId}`), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -49,10 +47,7 @@ export async function createPartidoPeriodo(dto: {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidoperiodos`, {
+    const response = await fetch(getApiUrl("partidoperiodos"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -97,10 +92,7 @@ export async function updatePartidoPeriodo(
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidoperiodos/${id}`, {
+    const response = await fetch(getApiUrl(`partidoperiodos/${id}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -136,10 +128,7 @@ export async function deletePartidoPeriodo(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidoperiodos/${id}`, {
+    const response = await fetch(getApiUrl(`partidoperiodos/${id}`), {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

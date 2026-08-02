@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import { PartidoPeriodosClient } from "./PartidoPeriodosClient";
+import { getApiUrl } from "@/lib/api-url";
 
 interface PageProps {
   searchParams: Promise<{ id?: string; partidoId?: string }>;
@@ -21,22 +22,18 @@ export default async function PartidoPeriodosPage({ searchParams }: PageProps) {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
   let torneo: any = null;
   let partido: any = null;
   let errorMsg = "";
 
   if (token) {
     try {
-      // Fetch de los detalles del Torneo y el Partido en paralelo
       const [resTorneo, resPartido] = await Promise.all([
-        fetch(`${baseUrl}/torneos/${id}`, {
+        fetch(getApiUrl(`torneos/${id}`), {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 0 },
         }),
-        fetch(`${baseUrl}/partidos/${partidoId}`, {
+        fetch(getApiUrl(`partidos/${partidoId}`), {
           headers: { Authorization: `Bearer ${token}` },
           next: { revalidate: 0 },
         })

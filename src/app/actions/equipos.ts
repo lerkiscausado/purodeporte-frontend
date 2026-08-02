@@ -1,18 +1,19 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function createEquipo(formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const representante = formData.get("representante") as string;
   const deporte = formData.get("deporte") as string;
-  const foto = formData.get("foto") as string || "";
-  const estado = formData.get("estado") as string || "Activo";
-  const telefono = formData.get("telefono") as string || "";
-  const correo = formData.get("correo") as string || "";
 
   if (!nombre || !representante || !deporte) {
     return { error: "Los campos nombre, representante y deporte son obligatorios." };
+  }
+
+  if (!formData.has("estado") || !formData.get("estado")) {
+    formData.set("estado", "Activo");
   }
 
   try {
@@ -23,20 +24,12 @@ export async function createEquipo(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const body: Record<string, any> = { nombre, representante, deporte, foto, estado };
-    if (telefono) body.telefono = telefono;
-    if (correo) body.correo = correo;
-
-    const response = await fetch(`${baseUrl}/equipos`, {
+    const response = await fetch(getApiUrl("equipos"), {
       method: "POST",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(body),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -60,10 +53,6 @@ export async function updateEquipo(id: number, formData: FormData) {
   const nombre = formData.get("nombre") as string;
   const representante = formData.get("representante") as string;
   const deporte = formData.get("deporte") as string;
-  const foto = formData.get("foto") as string || "";
-  const estado = formData.get("estado") as string;
-  const telefono = formData.get("telefono") as string;
-  const correo = formData.get("correo") as string;
 
   if (!nombre || !representante || !deporte) {
     return { error: "Los campos nombre, representante y deporte son obligatorios." };
@@ -77,27 +66,12 @@ export async function updateEquipo(id: number, formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const body: Record<string, any> = { nombre, representante, deporte, foto };
-    if (estado) {
-      body.estado = estado;
-    }
-    if (telefono !== null && telefono !== undefined) {
-      body.telefono = telefono;
-    }
-    if (correo !== null && correo !== undefined) {
-      body.correo = correo;
-    }
-
-    const response = await fetch(`${baseUrl}/equipos/${id}`, {
+    const response = await fetch(getApiUrl(`equipos/${id}`), {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(body),
+      body: formData,
     });
 
     if (!response.ok) {
@@ -126,10 +100,7 @@ export async function deleteEquipo(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/equipos/${id}`, {
+    const response = await fetch(getApiUrl(`equipos/${id}`), {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -159,10 +130,7 @@ export async function getEquipos() {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/equipos`, {
+    const response = await fetch(getApiUrl("equipos"), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -191,10 +159,7 @@ export async function getMisEquipos() {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/equipos/mis-equipos`, {
+    const response = await fetch(getApiUrl("equipos/mis-equipos"), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -223,10 +188,7 @@ export async function getEquipo(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/equipos/${id}`, {
+    const response = await fetch(getApiUrl(`equipos/${id}`), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -245,5 +207,3 @@ export async function getEquipo(id: number) {
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
   }
 }
-
-

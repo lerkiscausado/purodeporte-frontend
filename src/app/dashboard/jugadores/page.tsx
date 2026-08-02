@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaUsers, FaPlus } from "react-icons/fa";
 import { JugadoresListClient } from "./JugadoresListClient";
+import { getApiUrl } from "@/lib/api-url";
 
 export default async function JugadoresListPage({
   searchParams,
@@ -27,9 +28,6 @@ export default async function JugadoresListPage({
 
   const canModifyOrDelete = user.role !== "user";
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
   let jugadores: any[] = [];
   let totalJugadores = 0;
   let errorMsg = "";
@@ -47,7 +45,7 @@ export default async function JugadoresListPage({
         queryParams.append("gender", gender);
       }
 
-      const response = await fetch(`${baseUrl}/jugadores?${queryParams.toString()}`, {
+      const response = await fetch(`${getApiUrl("jugadores")}?${queryParams.toString()}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -113,7 +111,7 @@ export default async function JugadoresListPage({
         <JugadoresListClient
           initialJugadores={jugadores}
           totalJugadores={totalJugadores}
-          baseUrl={baseUrl}
+          baseUrl={getApiUrl()}
           canModifyOrDelete={canModifyOrDelete}
         />
       )}

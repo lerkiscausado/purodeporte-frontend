@@ -3,24 +3,22 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaPlus } from "react-icons/fa";
 import { TorneosListClient } from "./TorneosListClient";
+import { getApiUrl } from "@/lib/api-url";
 
 export default async function TorneosListPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
 
   let torneos: any[] = [];
   let errorMsg = "";
 
   if (token) {
     try {
-      const response = await fetch(`${baseUrl}/torneos/mis-torneos`, {
+      const response = await fetch(getApiUrl("torneos/mis-torneos"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
-        next: { revalidate: 0 }, // Evitar caché para datos en tiempo real
+        next: { revalidate: 0 },
       });
 
       if (response.ok) {

@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function createTorneo(formData: FormData) {
   try {
@@ -11,12 +12,7 @@ export async function createTorneo(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    // Send the FormData directly to the backend. Fetch with FormData automatically
-    // constructs a multipart/form-data request with the proper boundary and headers.
-    const response = await fetch(`${baseUrl}/torneos`, {
+    const response = await fetch(getApiUrl("torneos"), {
       method: "POST",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -50,10 +46,7 @@ export async function updateTorneo(id: number, data: { name: string; estado: str
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/torneos/${id}`, {
+    const response = await fetch(getApiUrl(`torneos/${id}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -78,4 +71,3 @@ export async function updateTorneo(id: number, data: { name: string; estado: str
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
   }
 }
-

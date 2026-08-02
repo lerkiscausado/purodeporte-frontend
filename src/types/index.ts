@@ -27,6 +27,9 @@ export interface Equipo {
 export interface Partido {
   id: string;
   torneoId: string;
+  torneoNombre?: string;
+  deporte?: string;
+  categoria?: string;
   equipoLocal: {
     id: string;
     nombre: string;
@@ -42,6 +45,10 @@ export interface Partido {
   marcadorLocal?: number;
   marcadorVisitante?: number;
   tipoJuego?: "OFICIAL" | "AMISTOSO" | "LIGUILLA";
+  escenario?: {
+    nombre: string;
+    direccion?: string;
+  };
 }
 
 export interface Noticia {

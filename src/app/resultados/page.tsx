@@ -1,4 +1,4 @@
-import { TablaResultados } from "@/components/TablaResultados";
+import { ResultadosPublicListClient } from "./ResultadosPublicListClient";
 import { getResultados } from "@/services/api";
 
 export const dynamic = "force-dynamic";
@@ -12,10 +12,8 @@ export default async function ResultadosPage() {
         <span className="bg-primary w-3 h-10 rounded-full inline-block"></span>
         Resultados Recientes
       </h1>
-      
-      <div className="bg-card/30 p-6 rounded-xl border border-border/50">
-        <TablaResultados partidos={resultados} />
-      </div>
+
+      <ResultadosPublicListClient initialResultados={resultados} />
     </div>
   );
 }

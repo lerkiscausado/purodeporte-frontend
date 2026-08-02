@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function updateProfile(formData: FormData) {
   const name = formData.get("name") as string;
@@ -16,7 +17,6 @@ export async function updateProfile(formData: FormData) {
     return { error: "El nombre y el teléfono son requeridos." };
   }
 
-  // Si quiere cambiar contraseña, todos los campos son requeridos
   if ((currentPassword && !newPassword) || (!currentPassword && newPassword)) {
     return { error: "Para cambiar la contraseña, debes ingresar la contraseña actual y la nueva." };
   }
@@ -33,10 +33,6 @@ export async function updateProfile(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    // Construir el body del request
     const body: Record<string, any> = { 
       name, 
       phone,
@@ -49,7 +45,7 @@ export async function updateProfile(formData: FormData) {
       body.password = newPassword;
     }
 
-    const response = await fetch(`${baseUrl}/users/profile`, {
+    const response = await fetch(getApiUrl("users/profile"), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -67,7 +63,6 @@ export async function updateProfile(formData: FormData) {
 
     const updatedUser = await response.json();
 
-    // Actualizar la cookie user_data con los nuevos datos
     cookieStore.set("user_data", JSON.stringify(updatedUser), {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

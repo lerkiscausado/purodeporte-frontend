@@ -1,4 +1,4 @@
-import { CardTorneo } from "@/components/CardTorneo";
+import { TorneosPublicListClient } from "./TorneosPublicListClient";
 import { getTorneos } from "@/services/api";
 
 export const dynamic = "force-dynamic";
@@ -12,12 +12,8 @@ export default async function TorneosPage() {
         <span className="bg-primary w-3 h-10 rounded-full inline-block"></span>
         Torneos Activos
       </h1>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        {torneos.map((torneo) => (
-          <CardTorneo key={torneo.id} torneo={torneo} />
-        ))}
-      </div>
+
+      <TorneosPublicListClient initialTorneos={torneos} />
     </div>
   );
 }

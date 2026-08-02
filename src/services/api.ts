@@ -1,23 +1,16 @@
 import axios from "axios";
 import { Torneo, Partido, Noticia } from "@/types";
 import { getUploadUrl } from "@/lib/uploads";
+import { getApiUrl } from "@/lib/api-url";
 
 // Configuración base de axios (mantenida por retrocompatibilidad)
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api",
+  baseURL: getApiUrl(),
   timeout: 5000,
   headers: {
     "Content-Type": "application/json",
   },
 });
-
-/**
- * Obtiene la URL base limpia de la API asegurando que no termine en '/'
- */
-function getApiBaseUrl(): string {
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000/api";
-  return apiUrl.endsWith("/") ? apiUrl.slice(0, -1) : apiUrl;
-}
 
 // ==========================================
 // MAPPERS / TRANSFORMADORES DE DATOS
@@ -92,10 +85,30 @@ export function mapPartidoBackendToPartido(item: any): Partido {
 
   const equipoLocalNombre = item.equipoLocal?.nombre || item.equipoLocal?.name || item.localNombre || "Equipo Local";
   const equipoVisitanteNombre = item.equipoVisitante?.nombre || item.equipoVisitante?.name || item.visitanteNombre || "Equipo Visitante";
+  const torneoNombre = item.torneo?.name || item.torneo?.nombre || item.torneoNombre || undefined;
+  const deporte = item.torneo?.deporte || item.deporte || undefined;
+  const categoria = item.torneo?.rama || item.torneo?.categoria || item.rama || item.categoria || undefined;
+
+  let escenarioMapped: { nombre: string; direccion?: string } | undefined;
+  if (item.escenario) {
+    if (typeof item.escenario === "object") {
+      escenarioMapped = {
+        nombre: item.escenario.nombre || item.escenario.name || "Escenario Principal",
+        direccion: item.escenario.direccion || item.escenario.barrioSector || "",
+      };
+    } else if (typeof item.escenario === "string") {
+      escenarioMapped = {
+        nombre: item.escenario,
+      };
+    }
+  }
 
   return {
     id: String(item.id),
     torneoId: String(item.idTorneo || item.torneo?.id || item.torneoId || ""),
+    torneoNombre,
+    deporte,
+    categoria,
     equipoLocal: {
       id: String(item.equipoLocal?.id || item.idEquipoLocal || "local"),
       nombre: equipoLocalNombre,
@@ -111,6 +124,7 @@ export function mapPartidoBackendToPartido(item: any): Partido {
     marcadorLocal: item.local ?? item.marcadorLocal ?? undefined,
     marcadorVisitante: item.visitante ?? item.marcadorVisitante ?? undefined,
     tipoJuego: item.tipoJuego || "OFICIAL",
+    escenario: escenarioMapped,
   };
 }
 
@@ -134,10 +148,10 @@ export function mapNoticiaBackendToNoticia(item: any): Noticia {
 
 export const getTorneosGrouped = async (): Promise<any> => {
   try {
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/torneos/public`, { cache: "no-store" });
+    const url = getApiUrl("torneos/public");
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
-      console.error(`Error HTTP ${res.status} al consultar /torneos/public`);
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
       return { deportes: {} };
     }
     const data = await res.json();
@@ -172,13 +186,12 @@ export const getTorneos = async (): Promise<Torneo[]> => {
     }
 
     // Fallback secundario si /torneos/public devolvió vacío
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/torneos`, { cache: "no-store" });
+    const url = getApiUrl("torneos");
+    const res = await fetch(url, { cache: "no-store" });
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data)) {
-        return data.map(mapTorneoBackendToTorneo);
-      }
+      const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+      return list.map(mapTorneoBackendToTorneo);
     }
 
     return [];
@@ -190,15 +203,15 @@ export const getTorneos = async (): Promise<Torneo[]> => {
 
 export const getResultados = async (): Promise<Partido[]> => {
   try {
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/partidos/resultados`, { cache: "no-store" });
+    const url = getApiUrl("partidos/resultados");
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
-      console.error(`Error HTTP ${res.status} al consultar /partidos/resultados`);
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
       return [];
     }
     const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return data.map(mapPartidoBackendToPartido);
+    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+    return list.map(mapPartidoBackendToPartido);
   } catch (error) {
     console.error("Error al obtener resultados de partidos:", error);
     return [];
@@ -207,15 +220,15 @@ export const getResultados = async (): Promise<Partido[]> => {
 
 export const getProgramacion = async (): Promise<Partido[]> => {
   try {
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/partidos/programacion`, { cache: "no-store" });
+    const url = getApiUrl("partidos/programacion");
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
-      console.error(`Error HTTP ${res.status} al consultar /partidos/programacion`);
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
       return [];
     }
     const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return data.map(mapPartidoBackendToPartido);
+    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+    return list.map(mapPartidoBackendToPartido);
   } catch (error) {
     console.error("Error al obtener programación de partidos:", error);
     return [];
@@ -224,15 +237,15 @@ export const getProgramacion = async (): Promise<Partido[]> => {
 
 export const getNoticias = async (): Promise<Noticia[]> => {
   try {
-    const baseUrl = getApiBaseUrl();
-    const res = await fetch(`${baseUrl}/noticias/public`, { cache: "no-store" });
+    const url = getApiUrl("noticias/public");
+    const res = await fetch(url, { cache: "no-store" });
     if (!res.ok) {
-      console.error(`Error HTTP ${res.status} al consultar /noticias/public`);
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
       return [];
     }
     const data = await res.json();
-    if (!Array.isArray(data)) return [];
-    return data.map(mapNoticiaBackendToNoticia);
+    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+    return list.map(mapNoticiaBackendToNoticia);
   } catch (error) {
     console.error("Error al obtener noticias públicas:", error);
     return [];

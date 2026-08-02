@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function createJugador(formData: FormData) {
   const nombre = formData.get("nombre") as string;
@@ -28,9 +29,6 @@ export async function createJugador(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
     const body: Record<string, any> = { nombre, apellidos, genero, fechaNacimiento, estatura };
     if (identificacion) {
       body.identificacion = identificacion;
@@ -39,7 +37,7 @@ export async function createJugador(formData: FormData) {
       body.estado = estado;
     }
 
-    const response = await fetch(`${baseUrl}/jugadores`, {
+    const response = await fetch(getApiUrl("jugadores"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -91,9 +89,6 @@ export async function updateJugador(id: number, formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
     const body: Record<string, any> = { nombre, apellidos, genero, fechaNacimiento, estatura };
     if (identificacion) {
       body.identificacion = identificacion;
@@ -102,7 +97,7 @@ export async function updateJugador(id: number, formData: FormData) {
       body.estado = estado;
     }
 
-    const response = await fetch(`${baseUrl}/jugadores/${id}`, {
+    const response = await fetch(getApiUrl(`jugadores/${id}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -137,10 +132,7 @@ export async function deleteJugador(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/jugadores/${id}`, {
+    const response = await fetch(getApiUrl(`jugadores/${id}`), {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -170,10 +162,7 @@ export async function getJugadores() {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/jugadores`, {
+    const response = await fetch(getApiUrl("jugadores"), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -192,4 +181,3 @@ export async function getJugadores() {
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
   }
 }
-

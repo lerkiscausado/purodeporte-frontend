@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function getPlanillasPorTorneo(torneoId: number) {
   try {
@@ -11,10 +12,7 @@ export async function getPlanillasPorTorneo(torneoId: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/planillas/torneo/${torneoId}`, {
+    const response = await fetch(getApiUrl(`planillas/torneo/${torneoId}`), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -49,10 +47,7 @@ export async function createPlanilla(
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/planillas`, {
+    const response = await fetch(getApiUrl("planillas"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -94,10 +89,7 @@ export async function deletePlanilla(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/planillas/${id}`, {
+    const response = await fetch(getApiUrl(`planillas/${id}`), {
       method: "DELETE",
       headers: {
         Authorization: `Bearer ${token}`,

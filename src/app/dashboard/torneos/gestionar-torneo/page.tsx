@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import Link from "next/link";
 import { FaArrowLeft } from "react-icons/fa";
 import { GestionarTorneoClient } from "./GestionarTorneoClient";
+import { getApiUrl } from "@/lib/api-url";
 
 interface PageProps {
   searchParams: Promise<{ id?: string }>;
@@ -21,9 +22,6 @@ export default async function GestionarTorneoPage({ searchParams }: PageProps) {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
 
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
   let torneo: any = null;
   let partidos: any[] = [];
   let errorMsg = "";
@@ -31,7 +29,7 @@ export default async function GestionarTorneoPage({ searchParams }: PageProps) {
   if (token) {
     try {
       // 1. Fetch de los detalles del Torneo
-      const response = await fetch(`${baseUrl}/torneos/${id}`, {
+      const response = await fetch(getApiUrl(`torneos/${id}`), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -46,7 +44,7 @@ export default async function GestionarTorneoPage({ searchParams }: PageProps) {
 
       // 2. Fetch de los partidos del Torneo
       if (torneo) {
-        const partidosResponse = await fetch(`${baseUrl}/partidos/torneo/${id}`, {
+        const partidosResponse = await fetch(getApiUrl(`partidos/torneo/${id}`), {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -82,7 +80,7 @@ export default async function GestionarTorneoPage({ searchParams }: PageProps) {
     <GestionarTorneoClient
       torneo={torneo}
       partidos={partidos}
-      baseUrl={baseUrl}
+      baseUrl={getApiUrl()}
     />
   );
 }

@@ -3,20 +3,18 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { FaUserFriends, FaPlus } from "react-icons/fa";
 import { EquiposListClient } from "./EquiposListClient";
+import { getApiUrl } from "@/lib/api-url";
 
 export default async function EquiposListPage() {
   const cookieStore = await cookies();
   const token = cookieStore.get("session_token")?.value;
-
-  const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-  const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
 
   let equipos: any[] = [];
   let errorMsg = "";
 
   if (token) {
     try {
-      const response = await fetch(`${baseUrl}/equipos/mis-equipos`, {
+      const response = await fetch(getApiUrl("equipos/mis-equipos"), {
         headers: {
           Authorization: `Bearer ${token}`,
         },
@@ -75,7 +73,7 @@ export default async function EquiposListPage() {
           </Link>
         </div>
       ) : (
-        <EquiposListClient initialEquipos={equipos} baseUrl={baseUrl} />
+        <EquiposListClient initialEquipos={equipos} baseUrl={getApiUrl()} />
       )}
     </div>
   );

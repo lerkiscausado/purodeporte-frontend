@@ -2,7 +2,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
-import { FaFutbol, FaChartLine, FaCalendarAlt, FaTrophy } from "react-icons/fa";
+import { FaFutbol, FaChartLine, FaCalendarAlt, FaTrophy, FaNewspaper } from "react-icons/fa";
 import { cookies } from "next/headers";
 import { UserMenu } from "./UserMenu";
 
@@ -50,6 +50,9 @@ export async function Navbar() {
           <Link href="/programacion" className="flex items-center gap-2 hover:text-primary transition-colors text-white/70 hover:scale-105 transform duration-200">
             <FaCalendarAlt className="h-4 w-4" /> Programación
           </Link>
+          <Link href="/noticias" className="flex items-center gap-2 hover:text-primary transition-colors text-white/70 hover:scale-105 transform duration-200">
+            <FaNewspaper className="h-4 w-4" /> Noticias
+          </Link>
         </div>
 
         <div className="flex items-center gap-4">
@@ -84,4 +87,3 @@ export async function Navbar() {
     </nav>
   );
 }
-

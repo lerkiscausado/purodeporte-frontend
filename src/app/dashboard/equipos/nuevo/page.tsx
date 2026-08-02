@@ -11,7 +11,8 @@ import {
   FaUsers,
   FaFutbol,
   FaBasketballBall,
-  FaVolleyballBall
+  FaVolleyballBall,
+  FaImage
 } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -188,15 +189,19 @@ export default function RegistrarEquipoPage() {
 
           {/* Más Datos del Equipo */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Foto (Opcional) */}
+            {/* Escudo del Equipo (Opcional) */}
             <div className="space-y-2">
-              <Label htmlFor="foto" className="font-bold text-sm">URL del Logo <span className="text-muted-foreground font-normal text-xs">(opcional)</span></Label>
-              <Input
-                id="foto"
-                name="foto"
-                placeholder="Ej. /uploads/logo.png"
-                className="bg-background/50 h-12 border-border/60 rounded-sm"
-              />
+              <Label htmlFor="foto" className="font-bold text-sm">Escudo del Equipo (Opcional)</Label>
+              <div className="relative">
+                <Input
+                  id="foto"
+                  name="foto"
+                  type="file"
+                  accept="image/*"
+                  className="bg-card file:bg-primary/10 file:text-primary file:border-0 file:rounded-sm file:px-3 file:py-1 file:mr-3 file:font-bold hover:file:bg-primary/20 cursor-pointer pt-2 text-xs border-border/60 rounded-sm h-12 pl-10"
+                />
+                <FaImage className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground/70 h-4 w-4" />
+              </div>
             </div>
 
             {/* Teléfono (Opcional) */}

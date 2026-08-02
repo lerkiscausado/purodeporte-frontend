@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function createEscenario(formData: FormData) {
   const nombre = formData.get("nombre") as string;
@@ -21,10 +22,7 @@ export async function createEscenario(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/escenarios`, {
+    const response = await fetch(getApiUrl("escenarios"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -67,10 +65,7 @@ export async function updateEscenario(id: number, formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/escenarios/${id}`, {
+    const response = await fetch(getApiUrl(`escenarios/${id}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -102,10 +97,7 @@ export async function getEscenarios() {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/escenarios`, {
+    const response = await fetch(getApiUrl("escenarios"), {
       method: "GET",
       headers: {
         Authorization: `Bearer ${token}`,
@@ -127,4 +119,3 @@ export async function getEscenarios() {
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
   }
 }
-

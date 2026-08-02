@@ -1,6 +1,7 @@
 "use server";
 
 import { cookies } from "next/headers";
+import { getApiUrl } from "@/lib/api-url";
 
 export async function createPartido(formData: FormData) {
   try {
@@ -11,17 +12,14 @@ export async function createPartido(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
     const fecha = formData.get("fecha") as string;
     const horaInput = formData.get("hora") as string; // Ej: "15:00"
     const idTorneoStr = formData.get("idTorneo") as string;
     const idEquipoLocalStr = formData.get("idEquipoLocal") as string;
     const idEquipoVisitanteStr = formData.get("idEquipoVisitante") as string;
     const idEscenarioStr = formData.get("idEscenario") as string;
-    const descripcion = formData.get("descripcion") as string || "";
-    const tipoJuego = formData.get("tipoJuego") as string || "OFICIAL";
+    const descripcion = (formData.get("descripcion") as string) || "";
+    const tipoJuego = (formData.get("tipoJuego") as string) || "OFICIAL";
 
     if (!fecha || !horaInput || !idTorneoStr || !idEquipoLocalStr || !idEquipoVisitanteStr) {
       return { error: "La fecha, hora, torneo y ambos equipos son obligatorios." };
@@ -39,7 +37,6 @@ export async function createPartido(formData: FormData) {
       return { error: "El equipo local y el equipo visitante no pueden ser el mismo." };
     }
 
-    // El backend espera la hora en formato "HH:MM:SS". Si viene de input type="time" (ej: "15:00"), agregamos ":00"
     let hora = horaInput;
     if (hora.length === 5) {
       hora = `${hora}:00`;
@@ -62,7 +59,7 @@ export async function createPartido(formData: FormData) {
       }
     }
 
-    const response = await fetch(`${baseUrl}/partidos`, {
+    const response = await fetch(getApiUrl("partidos"), {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -97,10 +94,7 @@ export async function getPartido(id: number) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidos/${id}`, {
+    const response = await fetch(getApiUrl(`partidos/${id}`), {
       headers: {
         Authorization: `Bearer ${token}`,
       },
@@ -129,10 +123,7 @@ export async function updatePartido(id: number, data: any) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-    const baseUrl = apiUrl.endsWith("/api") ? apiUrl.slice(0, -4) : apiUrl;
-
-    const response = await fetch(`${baseUrl}/partidos/${id}`, {
+    const response = await fetch(getApiUrl(`partidos/${id}`), {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -156,4 +147,3 @@ export async function updatePartido(id: number, data: any) {
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
   }
 }
-

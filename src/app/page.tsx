@@ -97,11 +97,17 @@ export default async function Home() {
                   Ver todos <ArrowRight className="ml-1 h-3 w-3" />
                 </Link>
               </div>
-              <div className="space-y-3">
-                {torneos.map((torneo) => (
-                  <CardTorneo key={torneo.id} torneo={torneo} />
-                ))}
-              </div>
+              {torneos.length === 0 ? (
+                <div className="border border-border/60 rounded-sm bg-card p-4 text-center text-xs text-muted-foreground font-medium">
+                  No hay torneos disponibles.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {torneos.slice(0, 6).map((torneo) => (
+                    <CardTorneo key={torneo.id} torneo={torneo} />
+                  ))}
+                </div>
+              )}
             </section>
             <section className="pt-4 border-t border-border/40">
               <div className="flex items-center justify-between mb-4">
@@ -154,11 +160,17 @@ export default async function Home() {
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-extrabold marca-line">Noticias</h2>
             </div>
-            <div className="space-y-7">
-              {noticias.map((noticia) => (
-                <CardNoticia key={noticia.id} noticia={noticia} />
-              ))}
-            </div>
+            {noticias.length === 0 ? (
+              <div className="border border-border/60 rounded-sm bg-card p-6 text-center text-sm text-muted-foreground font-medium">
+                No hay noticias recientes.
+              </div>
+            ) : (
+              <div className="space-y-7">
+                {noticias.map((noticia) => (
+                  <CardNoticia key={noticia.id} noticia={noticia} />
+                ))}
+              </div>
+            )}
           </section>
 
           {/* ── COL 3: PARTIDOS + RESULTADOS (25%) ───── */}
@@ -170,11 +182,17 @@ export default async function Home() {
                   Todos <ArrowRight className="ml-1 h-3 w-3" />
                 </Link>
               </div>
-              <div className="space-y-3">
-                {programacion.slice(0, 4).map((partido) => (
-                  <PartidoItem key={partido.id} partido={partido} />
-                ))}
-              </div>
+              {programacion.length === 0 ? (
+                <div className="border border-border/60 rounded-sm bg-card p-4 text-center text-xs text-muted-foreground font-medium">
+                  No hay partidos programados.
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {programacion.slice(0, 4).map((partido) => (
+                    <PartidoItem key={partido.id} partido={partido} />
+                  ))}
+                </div>
+              )}
             </section>
 
             <section>
