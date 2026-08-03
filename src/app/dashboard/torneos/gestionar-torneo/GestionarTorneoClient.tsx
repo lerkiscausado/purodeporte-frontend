@@ -30,6 +30,7 @@ import {
 import { DatePickerStrip } from "@/components/DatePickerStrip";
 import { getInscripcionesPorTorneo, deleteInscripcion } from "@/app/actions/inscripciones";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface GestionarTorneoClientProps {
   torneo: any;
@@ -580,7 +581,7 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                                 <div className="flex items-center gap-3">
                                   {insc.equipo?.foto ? (
                                     <img
-                                      src={insc.equipo.foto}
+                                      src={getUploadUrl("equipos", insc.equipo.foto)}
                                       alt={insc.equipo.nombre}
                                       className="h-8 w-8 rounded-full object-cover border border-border/60 shrink-0"
                                     />
@@ -744,8 +745,16 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                         <div className="p-5 flex items-center justify-between gap-4 bg-gradient-to-b from-transparent to-muted/5">
                           {/* Equipo Local */}
                           <div className="flex flex-col items-center text-center flex-1 space-y-2">
-                            <div className="h-12 w-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center font-black text-sm text-primary shadow-sm group-hover:scale-105 transition-transform">
-                              {partido.equipoLocal?.nombre?.substring(0, 2).toUpperCase() || "LC"}
+                            <div className="h-12 w-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center font-black text-sm text-primary shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+                              {partido.equipoLocal?.foto ? (
+                                <img
+                                  src={getUploadUrl("equipos", partido.equipoLocal.foto)}
+                                  alt={partido.equipoLocal?.nombre || "Local"}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                partido.equipoLocal?.nombre?.substring(0, 2).toUpperCase() || "LC"
+                              )}
                             </div>
                             <span className="font-bold text-xs uppercase tracking-tight line-clamp-2 min-h-[2rem] flex items-center justify-center">
                               {partido.equipoLocal?.nombre || "Local"}
@@ -775,8 +784,16 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
 
                           {/* Equipo Visitante */}
                           <div className="flex flex-col items-center text-center flex-1 space-y-2">
-                            <div className="h-12 w-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center font-black text-sm text-primary shadow-sm group-hover:scale-105 transition-transform">
-                              {partido.equipoVisitante?.nombre?.substring(0, 2).toUpperCase() || "VT"}
+                            <div className="h-12 w-12 rounded-full bg-primary/5 border border-primary/10 flex items-center justify-center font-black text-sm text-primary shadow-sm group-hover:scale-105 transition-transform overflow-hidden">
+                              {partido.equipoVisitante?.foto ? (
+                                <img
+                                  src={getUploadUrl("equipos", partido.equipoVisitante.foto)}
+                                  alt={partido.equipoVisitante?.nombre || "Visitante"}
+                                  className="h-full w-full object-cover"
+                                />
+                              ) : (
+                                partido.equipoVisitante?.nombre?.substring(0, 2).toUpperCase() || "VT"
+                              )}
                             </div>
                             <span className="font-bold text-xs uppercase tracking-tight line-clamp-2 min-h-[2rem] flex items-center justify-center">
                               {partido.equipoVisitante?.nombre || "Visitante"}

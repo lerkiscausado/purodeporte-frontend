@@ -29,6 +29,7 @@ import {
 } from "@/app/actions/partidoperiodos";
 import { updatePartido } from "@/app/actions/partidos";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface PartidoPeriodosClientProps {
   torneo: any;
@@ -455,7 +456,7 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
                 <div className="order-1 md:order-2">
                   {partido.equipoLocal?.foto ? (
                     <img
-                      src={partido.equipoLocal.foto}
+                      src={getUploadUrl("equipos", partido.equipoLocal.foto)}
                       alt={partido.equipoLocal.nombre}
                       className="h-16 w-16 rounded-full object-cover border border-border/60 shadow-sm shrink-0"
                     />
@@ -486,7 +487,7 @@ export function PartidoPeriodosClient({ torneo, partido }: PartidoPeriodosClient
                 <div>
                   {partido.equipoVisitante?.foto ? (
                     <img
-                      src={partido.equipoVisitante.foto}
+                      src={getUploadUrl("equipos", partido.equipoVisitante.foto)}
                       alt={partido.equipoVisitante.nombre}
                       className="h-16 w-16 rounded-full object-cover border border-border/60 shadow-sm shrink-0"
                     />

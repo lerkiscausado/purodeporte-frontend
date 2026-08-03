@@ -25,6 +25,7 @@ import Link from "next/link";
 import { getJugadores } from "@/app/actions/jugadores";
 import { getPlanillasPorTorneo, createPlanilla, deletePlanilla } from "@/app/actions/planillas";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface PlayerSelectProps {
   players: any[];
@@ -397,7 +398,7 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
           <CardContent className="p-4 flex items-center gap-4">
             {equipo.foto ? (
               <img
-                src={equipo.foto}
+                src={getUploadUrl("equipos", equipo.foto)}
                 alt={equipo.nombre}
                 className="h-10 w-10 rounded-full object-cover border border-border/60 shrink-0"
               />

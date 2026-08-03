@@ -30,6 +30,7 @@ import { getInscripcionesPorTorneo } from "@/app/actions/inscripciones";
 import { createPartido } from "@/app/actions/partidos";
 import { SelectSearch } from "@/components/SelectSearch";
 import { cn } from "@/lib/utils";
+import { getUploadUrl } from "@/lib/uploads";
 
 interface TeamSelectProps {
   teams: any[];
@@ -107,7 +108,7 @@ function TeamSelect({
             <>
               {selectedTeam.foto ? (
                 <img
-                  src={selectedTeam.foto}
+                  src={getUploadUrl("equipos", selectedTeam.foto)}
                   alt={selectedTeam.nombre}
                   className="h-8 w-8 rounded-full object-cover border border-border/60 shrink-0"
                 />
@@ -176,7 +177,7 @@ function TeamSelect({
                     <div className="flex items-center gap-3 min-w-0">
                       {team.foto ? (
                         <img
-                          src={team.foto}
+                          src={getUploadUrl("equipos", team.foto)}
                           alt={team.nombre}
                           className="h-9 w-9 rounded-full object-cover border border-border/60 shrink-0"
                         />
