@@ -5,6 +5,7 @@ import { Partido } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { EquipoAvatar } from "@/components/EquipoAvatar";
 import {
   FaChartLine,
   FaSearch,
@@ -232,10 +233,16 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
 
                   <div className="flex items-center justify-between gap-3 pt-1">
                     {/* Equipo Local */}
-                    <div className="flex-1 text-center space-y-1 min-w-0">
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <EquipoAvatar
+                        nombre={partido.equipoLocal.nombre}
+                        foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                        size="lg"
+                        className="mb-1.5"
+                      />
                       <p
                         className={cn(
-                          "text-sm font-black uppercase tracking-tight truncate leading-tight",
+                          "text-sm font-black uppercase tracking-tight truncate leading-tight w-full text-center",
                           localWins ? "text-primary" : "text-foreground"
                         )}
                         title={partido.equipoLocal.nombre}
@@ -243,7 +250,7 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
                         {partido.equipoLocal.nombre}
                       </p>
                       {localWins && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-primary">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-primary mt-1">
                           <FaTrophy className="h-2.5 w-2.5" /> Ganador
                         </span>
                       )}
@@ -255,10 +262,16 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
                     </div>
 
                     {/* Equipo Visitante */}
-                    <div className="flex-1 text-center space-y-1 min-w-0">
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <EquipoAvatar
+                        nombre={partido.equipoVisitante.nombre}
+                        foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                        size="lg"
+                        className="mb-1.5"
+                      />
                       <p
                         className={cn(
-                          "text-sm font-black uppercase tracking-tight truncate leading-tight",
+                          "text-sm font-black uppercase tracking-tight truncate leading-tight w-full text-center",
                           visitanteWins ? "text-primary" : "text-foreground"
                         )}
                         title={partido.equipoVisitante.nombre}
@@ -266,7 +279,7 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
                         {partido.equipoVisitante.nombre}
                       </p>
                       {visitanteWins && (
-                        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-primary">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-bold uppercase tracking-wider text-primary mt-1">
                           <FaTrophy className="h-2.5 w-2.5" /> Ganador
                         </span>
                       )}
@@ -365,13 +378,20 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
                       </td>
 
                       {/* Local */}
-                      <td
-                        className={cn(
-                          "px-4 py-3 text-xs font-black uppercase tracking-tight text-right",
-                          localWins ? "text-primary" : "text-foreground"
-                        )}
-                      >
-                        {partido.equipoLocal.nombre}
+                      <td className="px-4 py-3">
+                        <div
+                          className={cn(
+                            "flex items-center justify-end gap-2 text-xs font-black uppercase tracking-tight",
+                            localWins ? "text-primary" : "text-foreground"
+                          )}
+                        >
+                          <span className="truncate">{partido.equipoLocal.nombre}</span>
+                          <EquipoAvatar
+                            nombre={partido.equipoLocal.nombre}
+                            foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                            size="sm"
+                          />
+                        </div>
                       </td>
 
                       {/* Marcador */}
@@ -382,13 +402,20 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
                       </td>
 
                       {/* Visitante */}
-                      <td
-                        className={cn(
-                          "px-4 py-3 text-xs font-black uppercase tracking-tight text-left",
-                          visitanteWins ? "text-primary" : "text-foreground"
-                        )}
-                      >
-                        {partido.equipoVisitante.nombre}
+                      <td className="px-4 py-3">
+                        <div
+                          className={cn(
+                            "flex items-center justify-start gap-2 text-xs font-black uppercase tracking-tight",
+                            visitanteWins ? "text-primary" : "text-foreground"
+                          )}
+                        >
+                          <EquipoAvatar
+                            nombre={partido.equipoVisitante.nombre}
+                            foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                            size="sm"
+                          />
+                          <span className="truncate">{partido.equipoVisitante.nombre}</span>
+                        </div>
                       </td>
 
                       {/* Escenario */}

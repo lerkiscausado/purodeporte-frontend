@@ -1,5 +1,6 @@
 import { Partido } from "@/types";
 import { Badge } from "./ui/badge";
+import { EquipoAvatar } from "./EquipoAvatar";
 
 interface PartidoItemProps {
   partido: Partido;
@@ -27,11 +28,25 @@ export function PartidoItem({ partido }: PartidoItemProps) {
 
       {/* Equipos */}
       <div className="flex items-center justify-between gap-2">
-        <span className="text-xs font-bold leading-tight flex-1 truncate">{partido.equipoLocal.nombre}</span>
-        <div className="bg-secondary/80 px-2 py-0.5 rounded-sm font-black text-sm tabular-nums tracking-wider min-w-[50px] text-center">
+        <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          <EquipoAvatar
+            nombre={partido.equipoLocal.nombre}
+            foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+            size="xs"
+          />
+          <span className="text-xs font-bold leading-tight truncate">{partido.equipoLocal.nombre}</span>
+        </div>
+        <div className="bg-secondary/80 px-2 py-0.5 rounded-sm font-black text-sm tabular-nums tracking-wider min-w-[50px] text-center shrink-0">
           {partido.marcadorLocal ?? "–"} : {partido.marcadorVisitante ?? "–"}
         </div>
-        <span className="text-xs font-bold leading-tight flex-1 truncate text-right">{partido.equipoVisitante.nombre}</span>
+        <div className="flex items-center justify-end gap-1.5 min-w-0 flex-1 text-right">
+          <span className="text-xs font-bold leading-tight truncate">{partido.equipoVisitante.nombre}</span>
+          <EquipoAvatar
+            nombre={partido.equipoVisitante.nombre}
+            foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+            size="xs"
+          />
+        </div>
       </div>
     </div>
   );

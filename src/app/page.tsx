@@ -2,6 +2,7 @@ import { CardNoticia } from "@/components/CardNoticia";
 import { CardTorneo } from "@/components/CardTorneo";
 import { PartidoItem } from "@/components/PartidoItem";
 import { TablaResultados } from "@/components/TablaResultados";
+import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { getNoticias, getProgramacion, getResultados, getTorneos, getTorneosGrouped } from "@/services/api";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
@@ -59,11 +60,33 @@ export default async function Home() {
               <div className="hidden lg:block bg-white/5 border border-white/10 rounded-sm p-5 min-w-[280px]">
                 <div className="text-[10px] font-bold tracking-widest uppercase text-primary mb-3">Próximo Partido</div>
                 <div className="flex items-center justify-between gap-4 mb-3">
-                  <span className="text-white font-bold text-sm text-right flex-1 leading-tight">{partidoDestacado.equipoLocal.nombre}</span>
-                  <div className="bg-white/10 border border-white/15 px-3 py-1.5 rounded-sm font-black text-lg text-white/90 tabular-nums tracking-wider min-w-[70px] text-center">
+                  <div className="flex flex-col items-center flex-1 min-w-0">
+                    <EquipoAvatar
+                      nombre={partidoDestacado.equipoLocal.nombre}
+                      foto={partidoDestacado.equipoLocal.logoUrl || (partidoDestacado.equipoLocal as any).foto}
+                      size="md"
+                      className="mb-1"
+                    />
+                    <span className="text-white font-bold text-xs text-center leading-tight truncate w-full" title={partidoDestacado.equipoLocal.nombre}>
+                      {partidoDestacado.equipoLocal.nombre}
+                    </span>
+                  </div>
+
+                  <div className="bg-white/10 border border-white/15 px-3 py-1.5 rounded-sm font-black text-lg text-white/90 tabular-nums tracking-wider min-w-[70px] text-center shrink-0">
                     {partidoDestacado.marcadorLocal ?? "–"} : {partidoDestacado.marcadorVisitante ?? "–"}
                   </div>
-                  <span className="text-white font-bold text-sm text-left flex-1 leading-tight">{partidoDestacado.equipoVisitante.nombre}</span>
+
+                  <div className="flex flex-col items-center flex-1 min-w-0">
+                    <EquipoAvatar
+                      nombre={partidoDestacado.equipoVisitante.nombre}
+                      foto={partidoDestacado.equipoVisitante.logoUrl || (partidoDestacado.equipoVisitante as any).foto}
+                      size="md"
+                      className="mb-1"
+                    />
+                    <span className="text-white font-bold text-xs text-center leading-tight truncate w-full" title={partidoDestacado.equipoVisitante.nombre}>
+                      {partidoDestacado.equipoVisitante.nombre}
+                    </span>
+                  </div>
                 </div>
                 <div className="flex items-center justify-between text-[11px] text-white/40">
                   <span>{new Date(partidoDestacado.fecha).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' })}</span>

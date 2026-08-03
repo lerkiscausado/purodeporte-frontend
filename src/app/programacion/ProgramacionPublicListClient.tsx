@@ -5,6 +5,7 @@ import { Partido } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { EquipoAvatar } from "@/components/EquipoAvatar";
 import {
   FaCalendarAlt,
   FaSearch,
@@ -238,9 +239,15 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
 
                   <div className="flex items-center justify-between gap-3 pt-1">
                     {/* Equipo Local */}
-                    <div className="flex-1 text-center space-y-1 min-w-0">
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <EquipoAvatar
+                        nombre={partido.equipoLocal.nombre}
+                        foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                        size="lg"
+                        className="mb-1.5"
+                      />
                       <p
-                        className="text-sm font-black uppercase tracking-tight truncate leading-tight text-foreground"
+                        className="text-sm font-black uppercase tracking-tight truncate leading-tight text-foreground w-full text-center"
                         title={partido.equipoLocal.nombre}
                       >
                         {partido.equipoLocal.nombre}
@@ -254,9 +261,15 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                     </div>
 
                     {/* Equipo Visitante */}
-                    <div className="flex-1 text-center space-y-1 min-w-0">
+                    <div className="flex flex-col items-center flex-1 min-w-0">
+                      <EquipoAvatar
+                        nombre={partido.equipoVisitante.nombre}
+                        foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                        size="lg"
+                        className="mb-1.5"
+                      />
                       <p
-                        className="text-sm font-black uppercase tracking-tight truncate leading-tight text-foreground"
+                        className="text-sm font-black uppercase tracking-tight truncate leading-tight text-foreground w-full text-center"
                         title={partido.equipoVisitante.nombre}
                       >
                         {partido.equipoVisitante.nombre}
@@ -348,8 +361,15 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                       </td>
 
                       {/* Local */}
-                      <td className="px-4 py-3 text-xs font-black uppercase tracking-tight text-right text-foreground">
-                        {partido.equipoLocal.nombre}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2 text-xs font-black uppercase tracking-tight text-foreground">
+                          <span className="truncate">{partido.equipoLocal.nombre}</span>
+                          <EquipoAvatar
+                            nombre={partido.equipoLocal.nombre}
+                            foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                            size="sm"
+                          />
+                        </div>
                       </td>
 
                       {/* Hora / VS */}
@@ -361,8 +381,15 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                       </td>
 
                       {/* Visitante */}
-                      <td className="px-4 py-3 text-xs font-black uppercase tracking-tight text-left text-foreground">
-                        {partido.equipoVisitante.nombre}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-start gap-2 text-xs font-black uppercase tracking-tight text-foreground">
+                          <EquipoAvatar
+                            nombre={partido.equipoVisitante.nombre}
+                            foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                            size="sm"
+                          />
+                          <span className="truncate">{partido.equipoVisitante.nombre}</span>
+                        </div>
                       </td>
 
                       {/* Escenario */}

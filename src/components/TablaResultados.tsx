@@ -1,5 +1,6 @@
 import { Partido } from "@/types";
 import { Badge } from "./ui/badge";
+import { EquipoAvatar } from "./EquipoAvatar";
 
 interface TablaResultadosProps {
   partidos: Partido[];
@@ -30,19 +31,33 @@ export function TablaResultados({ partidos }: TablaResultadosProps) {
             </Badge>
           </div>
           <div className="flex items-center justify-between gap-2">
-            <span className={`text-xs font-bold flex-1 truncate ${
-              partido.marcadorLocal != null && partido.marcadorVisitante != null && partido.marcadorLocal > partido.marcadorVisitante ? 'text-primary' : ''
-            }`}>
-              {partido.equipoLocal.nombre}
-            </span>
-            <span className="font-black text-sm tabular-nums tracking-wider text-primary min-w-[45px] text-center">
+            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+              <EquipoAvatar
+                nombre={partido.equipoLocal.nombre}
+                foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                size="xs"
+              />
+              <span className={`text-xs font-bold truncate ${
+                partido.marcadorLocal != null && partido.marcadorVisitante != null && partido.marcadorLocal > partido.marcadorVisitante ? 'text-primary' : ''
+              }`}>
+                {partido.equipoLocal.nombre}
+              </span>
+            </div>
+            <span className="font-black text-sm tabular-nums tracking-wider text-primary min-w-[45px] text-center shrink-0">
               {partido.marcadorLocal ?? "–"} : {partido.marcadorVisitante ?? "–"}
             </span>
-            <span className={`text-xs font-bold flex-1 truncate text-right ${
-              partido.marcadorLocal != null && partido.marcadorVisitante != null && partido.marcadorVisitante > partido.marcadorLocal ? 'text-primary' : ''
-            }`}>
-              {partido.equipoVisitante.nombre}
-            </span>
+            <div className="flex items-center justify-end gap-1.5 min-w-0 flex-1 text-right">
+              <span className={`text-xs font-bold truncate ${
+                partido.marcadorLocal != null && partido.marcadorVisitante != null && partido.marcadorVisitante > partido.marcadorLocal ? 'text-primary' : ''
+              }`}>
+                {partido.equipoVisitante.nombre}
+              </span>
+              <EquipoAvatar
+                nombre={partido.equipoVisitante.nombre}
+                foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                size="xs"
+              />
+            </div>
           </div>
         </div>
       ))}
