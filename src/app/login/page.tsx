@@ -1,34 +1,18 @@
-"use client";
-
-import { useActionState, useEffect, useState } from "react";
-import { login } from "@/app/actions/auth";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader } from "@/components/ui/card";
 import Image from "next/image";
-import { Eye, EyeOff } from "lucide-react";
+import Link from "next/link";
+import { LoginFormClient } from "./LoginFormClient";
 
-const initialState = {
-  error: "",
-};
+interface LoginPageProps {
+  searchParams: Promise<{ registered?: string }>;
+}
 
-export default function LoginPage() {
-  const [showPassword, setShowPassword] = useState(false);
-  // Manejo de estado del formulario mediante useActionState (React 19+)
-  // La función recibe (state, payload) y la acción de login en auth.ts espera (formData) 
-  // Por lo que necesitamos adaptar el wrapper:
-  const formAction = async (prevState: any, formData: FormData) => {
-    const result = await login(formData);
-    // login() redirige si es exitoso, así que este retorno es solo si hay error
-    return { error: result?.error || "" };
-  };
-
-  const [state, action, isPending] = useActionState(formAction, initialState);
+export default async function LoginPage({ searchParams }: LoginPageProps) {
+  const resolvedSearchParams = await searchParams;
+  const showRegisteredSuccess = resolvedSearchParams.registered === "true";
 
   return (
-    <div className="min-h-[80vh] flex items-center justify-center bg-background px-4">
+    <div className="min-h-[80vh] flex items-center justify-center bg-background px-4 py-8">
       <Card className="w-full max-w-md shadow-2xl border-border/50">
         <CardHeader className="space-y-4 flex flex-col items-center justify-center text-center pb-6 border-b border-border/40">
           <Image
@@ -42,52 +26,13 @@ export default function LoginPage() {
             Inicia sesión en tu cuenta
           </CardDescription>
         </CardHeader>
-        <CardContent className="pt-8">
-          <form action={action} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="email" className="font-bold">Correo Electrónico</Label>
-              <Input
-                id="email"
-                name="email"
-                type="email"
-                placeholder="ejemplo@correo.com"
-                required
-                className="h-12 bg-background/50 border-border"
-              />
+        <CardContent className="pt-8 space-y-6">
+          {showRegisteredSuccess && (
+            <div className="p-3 bg-green-500/10 border border-green-500/30 rounded-md text-green-600 dark:text-green-400 text-sm font-semibold text-center">
+              ¡Registro exitoso! Revisa tu correo electrónico para verificar tu cuenta antes de iniciar sesión.
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="font-bold">Contraseña</Label>
-              <div className="relative">
-                <Input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  className="h-12 bg-background/50 border-border pr-12"
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground focus:outline-none transition-colors"
-                >
-                  {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
-                  <span className="sr-only">
-                    {showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
-                  </span>
-                </button>
-              </div>
-            </div>
-
-            {state.error && (
-              <div className="p-3 bg-destructive/10 border border-destructive/30 rounded-md text-destructive text-sm font-semibold text-center">
-                {state.error}
-              </div>
-            )}
-
-            <Button type="submit" className="w-full h-12 font-bold text-lg" disabled={isPending}>
-              {isPending ? "Ingresando..." : "Iniciar Sesión"}
-            </Button>
-          </form>
+          )}
+          <LoginFormClient />
         </CardContent>
         <CardFooter className="justify-center border-t border-border/40 pt-6">
           <p className="text-sm text-muted-foreground font-medium">

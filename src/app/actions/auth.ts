@@ -113,3 +113,67 @@ export async function register(formData: FormData) {
     redirect("/login?registered=true");
   }
 }
+
+export async function verifyEmail(token: string) {
+  if (!token) {
+    return { success: false, message: "Enlace de verificación inválido." };
+  }
+
+  try {
+    const response = await fetch(getApiUrl("users/verify-email"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: data.message || "El enlace de verificación no es válido o ha expirado.",
+      };
+    }
+
+    return {
+      success: true,
+      message: data.message || "¡Tu correo electrónico ha sido verificado exitosamente!",
+    };
+  } catch (error) {
+    console.error("Error en verificación de correo:", error);
+    return {
+      success: false,
+      message: "Error de conexión con el servidor. Intenta nuevamente más tarde.",
+    };
+  }
+}
+
+export async function resendVerification(email: string) {
+  if (!email || !email.trim()) {
+    return { message: "Ingresa un correo electrónico válido." };
+  }
+
+  try {
+    const response = await fetch(getApiUrl("users/resend-verification"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return {
+      message:
+        data.message ||
+        "Si el correo existe en nuestro sistema, hemos enviado un enlace de verificación. Revisa tu bandeja de entrada.",
+    };
+  } catch (error) {
+    console.error("Error al reenviar correo de verificación:", error);
+    return {
+      message: "Error de conexión con el servidor. Intenta nuevamente más tarde.",
+    };
+  }
+}
