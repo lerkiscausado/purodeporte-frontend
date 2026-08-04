@@ -138,6 +138,7 @@ export function mapNoticiaBackendToNoticia(item: any): Noticia {
     id: String(item.id),
     titulo: item.titulo || item.title || "Noticia sin título",
     resumen,
+    descripcion: item.descripcion || item.resumen || "",
     fecha,
     imagenUrl,
   };

@@ -57,8 +57,14 @@ export default async function NoticiaDetailPage({ params }: PageProps) {
             {noticia.titulo}
           </h1>
 
-          <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-base pt-4 border-t border-border/40">
-            {noticia.resumen}
+          {noticia.resumen && (
+            <p className="text-lg md:text-xl font-semibold text-foreground/80 leading-snug">
+              {noticia.resumen}
+            </p>
+          )}
+
+          <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-base pt-4 border-t border-border/40 whitespace-pre-line">
+            {noticia.descripcion}
           </div>
         </div>
       </article>

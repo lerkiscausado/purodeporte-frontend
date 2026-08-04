@@ -55,6 +55,7 @@ export interface Noticia {
   id: string;
   titulo: string;
   resumen: string;
+  descripcion: string;
   fecha: string;
   imagenUrl: string;
 }
