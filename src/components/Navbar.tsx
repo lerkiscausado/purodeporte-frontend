@@ -1,10 +1,10 @@
 import Link from "next/link";
 import Image from "next/image";
-import { Menu } from "lucide-react";
 import { Button } from "./ui/button";
 import { FaFutbol, FaChartLine, FaCalendarAlt, FaTrophy, FaNewspaper } from "react-icons/fa";
 import { cookies } from "next/headers";
 import { UserMenu } from "./UserMenu";
+import { MobileMenu } from "./MobileMenu";
 
 export async function Navbar() {
   const cookieStore = await cookies();
@@ -80,9 +80,9 @@ export async function Navbar() {
             </div>
           )}
 
-          <Button variant="ghost" size="icon" className="md:hidden text-white/80 hover:text-white hover:bg-white/10">
-            <Menu className="h-6 w-6" />
-          </Button>
+          <div className="md:hidden">
+            <MobileMenu isAuthenticated={isAuthenticated} user={user} />
+          </div>
         </div>
       </div>
     </nav>
