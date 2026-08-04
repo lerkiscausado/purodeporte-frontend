@@ -20,12 +20,13 @@ export function mapTorneoBackendToTorneo(item: any): Torneo {
   const fotoFilename = item.foto || item.fotoUrl || item.imagenUrl;
   const fotoCompleta = getUploadUrl("torneos", fotoFilename);
 
-  let escenarioMapped: { nombre: string; direccion: string } | undefined;
+  let escenarioMapped: { nombre: string; direccion: string; ubicacion?: string } | undefined;
   if (item.escenario) {
     if (typeof item.escenario === "object") {
       escenarioMapped = {
         nombre: item.escenario.nombre || item.escenario.name || "Escenario Principal",
         direccion: item.escenario.direccion || item.escenario.address || "",
+        ubicacion: item.escenario.ubicacion || item.escenario.location || item.escenario.mapsUrl || undefined,
       };
     } else if (typeof item.escenario === "string") {
       escenarioMapped = {

@@ -12,7 +12,7 @@ export async function Navbar() {
   const isAuthenticated = !!sessionToken;
 
   // Leer datos del usuario desde la cookie
-  let user = { name: "Usuario", email: "", role: "user" };
+  let user = { name: "Usuario", email: "", role: "user", foto: "" };
   if (isAuthenticated) {
     const userDataCookie = cookieStore.get("user_data");
     if (userDataCookie?.value) {
@@ -62,6 +62,7 @@ export async function Navbar() {
                 userName={user.name}
                 userEmail={user.email}
                 userRole={user.role}
+                userFoto={(user as any).foto}
               />
             </div>
           ) : (

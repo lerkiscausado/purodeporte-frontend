@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { Card, CardContent } from "@/components/ui/card";
 import { FaUserCircle, FaEnvelope, FaPhone, FaShieldAlt, FaCalendarAlt, FaBirthdayCake, FaVenusMars, FaMapMarkerAlt } from "react-icons/fa";
 import { EditProfileModal } from "@/components/EditProfileModal";
+import { getUploadUrl } from "@/lib/uploads";
 
 export default async function PerfilPage() {
   const cookieStore = await cookies();
@@ -15,6 +16,7 @@ export default async function PerfilPage() {
     genero: "",
     fechaNacimiento: "",
     direccion: "",
+    foto: "",
     role: "user",
     createdAt: "",
     updatedAt: "",
@@ -65,8 +67,16 @@ export default async function PerfilPage() {
         {/* Banner */}
         <div className="h-28 bg-[oklch(0.25_0.05_255)] relative border-b border-border/60">
           <div className="absolute -bottom-10 left-6">
-            <div className="flex items-center justify-center h-20 w-20 rounded-sm bg-background border-2 border-border/60 shadow-md">
-              <FaUserCircle className="h-12 w-12 text-primary" />
+            <div className="flex items-center justify-center h-20 w-20 rounded-full bg-background border-2 border-border/60 shadow-md overflow-hidden">
+              {user.foto ? (
+                <img
+                  src={getUploadUrl("perfiles", user.foto)}
+                  alt={user.name}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <FaUserCircle className="h-12 w-12 text-primary" />
+              )}
             </div>
           </div>
         </div>
@@ -83,6 +93,7 @@ export default async function PerfilPage() {
             <EditProfileModal 
               userName={user.name} 
               userPhone={user.phone} 
+              userFoto={user.foto}
               userGenero={user.genero}
               userFechaNacimiento={user.fechaNacimiento}
               userDireccion={user.direccion}

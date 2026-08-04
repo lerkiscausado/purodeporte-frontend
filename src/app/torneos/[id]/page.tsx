@@ -87,6 +87,7 @@ export default async function TorneoDetailPage({ params }: PageProps) {
 
   const escenarioNombre = torneo.escenario?.nombre || (typeof torneo.escenario === "string" ? torneo.escenario : null);
   const escenarioDireccion = torneo.escenario?.direccion || null;
+  const escenarioUbicacion = (torneo.escenario as any)?.ubicacion || (torneo.escenario as any)?.location || (torneo.escenario as any)?.mapsUrl || null;
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl space-y-6">
@@ -169,7 +170,18 @@ export default async function TorneoDetailPage({ params }: PageProps) {
               <span className="font-bold text-foreground block">Escenario Principal</span>
               {escenarioNombre ? (
                 <span className="truncate block" title={`${escenarioNombre} ${escenarioDireccion ? `(${escenarioDireccion})` : ""}`}>
-                  {escenarioNombre}
+                  {escenarioUbicacion ? (
+                    <a
+                      href={escenarioUbicacion}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="hover:underline font-bold text-sky-500 hover:text-sky-400 transition-colors"
+                    >
+                      {escenarioNombre}
+                    </a>
+                  ) : (
+                    <span>{escenarioNombre}</span>
+                  )}
                   {escenarioDireccion && ` · ${escenarioDireccion}`}
                 </span>
               ) : (

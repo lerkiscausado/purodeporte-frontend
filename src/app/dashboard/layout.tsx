@@ -1,7 +1,7 @@
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import Link from "next/link";
-import { FaChartPie, FaTrophy, FaUsers, FaPenSquare, FaCalendarAlt, FaMapMarkerAlt, FaUserFriends } from "react-icons/fa";
+import { FaChartPie, FaTrophy, FaUsers, FaPenSquare, FaCalendarAlt, FaMapMarkerAlt, FaUserFriends, FaNewspaper } from "react-icons/fa";
 
 export default async function DashboardLayout({
   children,
@@ -14,6 +14,14 @@ export default async function DashboardLayout({
   // Protección de ruta: Si no hay token, redirigir al login
   if (!sessionToken) {
     redirect("/login");
+  }
+
+  const userDataCookie = cookieStore.get("user_data");
+  let user = { role: "user" };
+  if (userDataCookie?.value) {
+    try {
+      user = JSON.parse(userDataCookie.value);
+    } catch {}
   }
 
   return (
@@ -43,6 +51,11 @@ export default async function DashboardLayout({
             <Link href="/dashboard/escenarios" className="flex items-center gap-2 hover:text-primary transition-colors whitespace-nowrap">
               <FaMapMarkerAlt /> Escenarios
             </Link>
+            {user.role === "admin" && (
+              <Link href="/dashboard/noticias" className="flex items-center gap-2 hover:text-primary transition-colors whitespace-nowrap">
+                <FaNewspaper /> Noticias
+              </Link>
+            )}
           </div>
         </div>
       </div>
@@ -54,3 +67,4 @@ export default async function DashboardLayout({
     </div>
   );
 }
+

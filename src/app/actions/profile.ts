@@ -6,9 +6,6 @@ import { getApiUrl } from "@/lib/api-url";
 export async function updateProfile(formData: FormData) {
   const name = formData.get("name") as string;
   const phone = formData.get("phone") as string;
-  const genero = formData.get("genero") as string;
-  const fechaNacimiento = formData.get("fechaNacimiento") as string;
-  const direccion = formData.get("direccion") as string;
   const currentPassword = formData.get("currentPassword") as string;
   const newPassword = formData.get("newPassword") as string;
   const confirmNewPassword = formData.get("confirmNewPassword") as string;
@@ -25,6 +22,16 @@ export async function updateProfile(formData: FormData) {
     return { error: "Las contraseñas nuevas no coinciden." };
   }
 
+  if (newPassword) {
+    formData.set("password", newPassword);
+  }
+
+  // Eliminar entrada vacía de foto si no se adjuntó archivo
+  const fotoFile = formData.get("foto");
+  if (fotoFile instanceof File && fotoFile.size === 0) {
+    formData.delete("foto");
+  }
+
   try {
     const cookieStore = await cookies();
     const token = cookieStore.get("session_token")?.value;
@@ -33,31 +40,21 @@ export async function updateProfile(formData: FormData) {
       return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
     }
 
-    const body: Record<string, any> = { 
-      name, 
-      phone,
-      genero: genero || null,
-      fechaNacimiento: fechaNacimiento || null,
-      direccion: direccion || null,
-    };
-    
-    if (newPassword) {
-      body.password = newPassword;
-    }
-
     const response = await fetch(getApiUrl("users/profile"), {
       method: "PATCH",
       headers: {
-        "Content-Type": "application/json",
         Authorization: `Bearer ${token}`,
       },
-      body: JSON.stringify(body),
+      body: formData,
     });
 
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
+      const msg = Array.isArray(errorData.message)
+        ? errorData.message.join(". ")
+        : errorData.message;
       return {
-        error: errorData.message || "Error al actualizar el perfil. Intenta nuevamente.",
+        error: msg || "Error al actualizar el perfil. Intenta nuevamente.",
       };
     }
 
@@ -76,3 +73,4 @@ export async function updateProfile(formData: FormData) {
     return { error: "Error de conexión con el servidor. Intenta nuevamente más tarde." };
   }
 }
+

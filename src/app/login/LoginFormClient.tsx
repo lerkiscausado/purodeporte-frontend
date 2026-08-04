@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff } from "lucide-react";
 import { ResendVerificationForm } from "@/app/verificar-correo/ResendVerificationForm";
+import Link from "next/link";
 
 const initialState = {
   error: "",
@@ -40,7 +41,15 @@ export function LoginFormClient() {
         />
       </div>
       <div className="space-y-2">
-        <Label htmlFor="password" className="font-bold">Contraseña</Label>
+        <div className="flex items-center justify-between">
+          <Label htmlFor="password" className="font-bold">Contraseña</Label>
+          <Link
+            href="/olvide-contrasena"
+            className="text-xs font-semibold text-primary hover:underline"
+          >
+            ¿Olvidaste tu contraseña?
+          </Link>
+        </div>
         <div className="relative">
           <Input
             id="password"

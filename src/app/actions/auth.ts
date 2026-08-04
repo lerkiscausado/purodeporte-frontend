@@ -177,3 +177,71 @@ export async function resendVerification(email: string) {
     };
   }
 }
+
+export async function forgotPassword(email: string) {
+  if (!email || !email.trim()) {
+    return { message: "Ingresa un correo electrónico válido." };
+  }
+
+  try {
+    const response = await fetch(getApiUrl("users/forgot-password"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ email }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+    return {
+      message:
+        data.message ||
+        "Si la cuenta existe en nuestro sistema, hemos enviado un enlace de recuperación. Revisa tu bandeja de entrada.",
+    };
+  } catch (error) {
+    console.error("Error en solicitud de recuperación de contraseña:", error);
+    return {
+      message: "Error de conexión con el servidor. Intenta nuevamente más tarde.",
+    };
+  }
+}
+
+export async function resetPassword(token: string, password: string) {
+  if (!token) {
+    return { success: false, message: "Enlace de recuperación inválido." };
+  }
+  if (!password) {
+    return { success: false, message: "La contraseña es requerida." };
+  }
+
+  try {
+    const response = await fetch(getApiUrl("users/reset-password"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ token, password }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      return {
+        success: false,
+        message: data.message || "El enlace de recuperación no es válido o ha expirado.",
+      };
+    }
+
+    return {
+      success: true,
+      message: data.message || "Tu contraseña ha sido restablecida exitosamente.",
+    };
+  } catch (error) {
+    console.error("Error al restablecer contraseña:", error);
+    return {
+      success: false,
+      message: "Error de conexión con el servidor. Intenta nuevamente más tarde.",
+    };
+  }
+}
+
