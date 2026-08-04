@@ -252,4 +252,57 @@ export const getNoticias = async (): Promise<Noticia[]> => {
   }
 };
 
+export const getTorneoById = async (id: number): Promise<Torneo | null> => {
+  try {
+    const url = `${getApiUrl()}/torneos/${id}/public`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      if (res.status !== 404) {
+        console.error(`Error HTTP ${res.status} al consultar ${url}`);
+      }
+      return null;
+    }
+    const data = await res.json();
+    if (!data) return null;
+    return { ...data, ...mapTorneoBackendToTorneo(data) };
+  } catch (error) {
+    console.error(`Error de red al obtener torneo con ID ${id}:`, error);
+    return null;
+  }
+};
+
+export const getInscripcionesByTorneo = async (torneoId: number): Promise<any[]> => {
+  try {
+    const url = `${getApiUrl()}/inscripciones/torneo/${torneoId}/public`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
+      return [];
+    }
+    const data = await res.json();
+    return Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+  } catch (error) {
+    console.error(`Error de red al obtener inscripciones del torneo ${torneoId}:`, error);
+    return [];
+  }
+};
+
+export const getPartidosByTorneo = async (torneoId: number): Promise<Partido[]> => {
+  try {
+    const url = `${getApiUrl()}/partidos/torneo/${torneoId}/public`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      console.error(`Error HTTP ${res.status} al consultar ${url}`);
+      return [];
+    }
+    const data = await res.json();
+    const list = Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+    return list.map((item: any) => ({ ...item, ...mapPartidoBackendToPartido(item) }));
+  } catch (error) {
+    console.error(`Error de red al obtener partidos del torneo ${torneoId}:`, error);
+    return [];
+  }
+};
+
 export default api;
+

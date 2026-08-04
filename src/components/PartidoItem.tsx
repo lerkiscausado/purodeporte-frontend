@@ -10,20 +10,29 @@ export function PartidoItem({ partido }: PartidoItemProps) {
   const isFinalizado = partido.estado === "Finalizado";
   const isEnJuego = partido.estado === "En Juego";
 
+  const formattedDateTime = (() => {
+    try {
+      const d = new Date(partido.fecha);
+      if (isNaN(d.getTime())) return partido.fecha;
+      return `${d.toLocaleDateString(undefined, { day: "numeric", month: "short" })} · ${d.toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit" })}`;
+    } catch {
+      return partido.fecha;
+    }
+  })();
+
   return (
     <div className={`border-l-4 bg-card border border-border/60 rounded-sm p-3 transition-colors ${
       isEnJuego ? 'border-l-primary' : isFinalizado ? 'border-l-muted-foreground/40' : 'border-l-border'
     }`}>
       {/* Fecha + Estado */}
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-semibold text-muted-foreground">
-          {new Date(partido.fecha).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })}
-          {" · "}
-          {new Date(partido.fecha).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
+      <div className="flex items-center justify-between mb-2 gap-2">
+        <span className="text-[11px] font-semibold text-muted-foreground truncate" title={partido.escenario?.nombre ? `${formattedDateTime} · ${partido.escenario.nombre}` : formattedDateTime}>
+          {formattedDateTime}
+          {partido.escenario?.nombre && ` · ${partido.escenario.nombre}`}
         </span>
-        {isEnJuego && <Badge variant="default" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm animate-pulse">VIVO</Badge>}
-        {isFinalizado && <Badge variant="secondary" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm">Final</Badge>}
-        {!isEnJuego && !isFinalizado && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm">Pend.</Badge>}
+        {isEnJuego && <Badge variant="default" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm animate-pulse shrink-0">VIVO</Badge>}
+        {isFinalizado && <Badge variant="secondary" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Final</Badge>}
+        {!isEnJuego && !isFinalizado && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Pend.</Badge>}
       </div>
 
       {/* Equipos */}
@@ -51,3 +60,4 @@ export function PartidoItem({ partido }: PartidoItemProps) {
     </div>
   );
 }
+
