@@ -2,7 +2,7 @@ import { getTorneoById, getInscripcionesByTorneo, getPartidosByTorneo } from "@/
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { getUploadUrl } from "@/lib/uploads";
-import { TorneoDetailClient } from "./TorneoDetailClient";
+import { TorneoDetailClient, FavoritoButton } from "./TorneoDetailClient";
 import {
   FaArrowLeft,
   FaCalendarAlt,
@@ -13,6 +13,9 @@ import {
   FaVolleyballBall,
   FaTrophy,
 } from "react-icons/fa";
+
+import { cookies } from "next/headers";
+import { getMisFavoritos } from "@/app/actions/favoritos";
 
 export const dynamic = "force-dynamic";
 
@@ -61,15 +64,26 @@ export default async function TorneoDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const [torneo, inscripciones, partidos] = await Promise.all([
+  const cookieStore = await cookies();
+  const isAuthenticated = Boolean(cookieStore.get("session_token")?.value);
+
+  const [torneo, inscripciones, partidos, misFavoritos] = await Promise.all([
     getTorneoById(torneoId),
     getInscripcionesByTorneo(torneoId),
     getPartidosByTorneo(torneoId),
+    isAuthenticated ? getMisFavoritos() : Promise.resolve([]),
   ]);
 
   if (!torneo) {
     notFound();
   }
+
+  const isFavorito = misFavoritos.some(
+    (f: any) =>
+      Number(f.id) === torneoId ||
+      Number(f.torneoId) === torneoId ||
+      (f.torneo && Number(f.torneo.id) === torneoId)
+  );
 
   // Resolver imagen de portada/banner si existe
   const fotoRaw = (torneo as any).foto || (torneo as any).imagenUrl || torneo.fotoUrl;
@@ -142,6 +156,11 @@ export default async function TorneoDetailPage({ params }: PageProps) {
             >
               {torneo.estado}
             </span>
+            <FavoritoButton
+              torneoId={Number(torneo.id)}
+              initialIsFavorito={isFavorito}
+              isAuthenticated={isAuthenticated}
+            />
           </div>
         </div>
 
@@ -212,6 +231,8 @@ export default async function TorneoDetailPage({ params }: PageProps) {
         torneo={torneo}
         inscripciones={inscripciones}
         partidos={partidos}
+        isFavorito={isFavorito}
+        isAuthenticated={isAuthenticated}
       />
     </div>
   );

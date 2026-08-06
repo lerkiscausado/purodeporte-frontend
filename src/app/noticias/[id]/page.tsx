@@ -3,11 +3,32 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { FaArrowLeft, FaCalendarAlt } from "react-icons/fa";
+import DOMPurify from "isomorphic-dompurify";
 
 export const dynamic = "force-dynamic";
 
 interface PageProps {
   params: Promise<{ id: string }>;
+}
+
+/**
+ * Normalises the descripcion field so both old plain-text entries and new
+ * Tiptap-generated HTML render correctly.
+ *
+ * - New content: already HTML → sanitize and return as-is.
+ * - Legacy content: plain text without HTML tags → wrap in <p> and convert
+ *   \n to <br> so existing line breaks are preserved visually.
+ */
+function prepareContent(raw: string): string {
+  if (!raw) return "";
+  const hasHtmlTags = /<[a-z][\s\S]*>/i.test(raw);
+  const html = hasHtmlTags
+    ? raw
+    : raw
+        .split(/\n/)
+        .map((line) => `<p>${line || "&nbsp;"}</p>`)
+        .join("");
+  return DOMPurify.sanitize(html, { USE_PROFILES: { html: true } });
 }
 
 export default async function NoticiaDetailPage({ params }: PageProps) {
@@ -18,6 +39,8 @@ export default async function NoticiaDetailPage({ params }: PageProps) {
   if (!noticia) {
     notFound();
   }
+
+  const safeHtml = prepareContent(noticia.descripcion ?? "");
 
   return (
     <div className="container mx-auto px-4 py-10 max-w-4xl">
@@ -63,9 +86,12 @@ export default async function NoticiaDetailPage({ params }: PageProps) {
             </p>
           )}
 
-          <div className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-base pt-4 border-t border-border/40 whitespace-pre-line">
-            {noticia.descripcion}
-          </div>
+          {/* Sanitized HTML — DOMPurify strips any dangerous content.
+              Legacy plain-text entries are pre-wrapped in <p> tags above. */}
+          <div
+            className="prose prose-invert max-w-none text-muted-foreground leading-relaxed text-base pt-4 border-t border-border/40"
+            dangerouslySetInnerHTML={{ __html: safeHtml }}
+          />
         </div>
       </article>
     </div>

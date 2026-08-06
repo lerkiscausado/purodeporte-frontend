@@ -76,6 +76,8 @@ export async function register(formData: FormData) {
   const password = formData.get("password");
   const confirmPassword = formData.get("confirmPassword");
   const name = formData.get("name");
+  // 'organizador' | 'seguidor' — maps to MANAGER / USER on the backend
+  const tipoUsuario = (formData.get("tipoUsuario") as string) || "seguidor";
 
   if (!email || !password || !confirmPassword || !phone || !name) {
     return { error: "Todos los campos son requeridos." };
@@ -93,7 +95,7 @@ export async function register(formData: FormData) {
       headers: {
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ email, phone, password, name }),
+      body: JSON.stringify({ email, phone, password, name, tipoUsuario }),
     });
 
     if (!response.ok) {
@@ -112,6 +114,63 @@ export async function register(formData: FormData) {
   if (isSuccess) {
     redirect("/login?registered=true");
   }
+}
+
+/**
+ * Activates the current user as an Organizador.
+ * Calls PATCH /api/users/tipo-usuario with { tipoUsuario: "organizador" },
+ * updates the user_data cookie with the new role returned by the API,
+ * then redirects to /dashboard so the full layout loads immediately.
+ */
+export async function activarOrganizador() {
+  const cookieStore = await cookies();
+  const token = cookieStore.get("session_token")?.value;
+
+  if (!token) {
+    return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
+  }
+
+  try {
+    const response = await fetch(getApiUrl("users/tipo-usuario"), {
+      method: "PATCH",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({ tipoUsuario: "organizador" }),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        error: errorData.message || "No se pudo activar la cuenta. Intenta nuevamente.",
+      };
+    }
+
+    const updatedUser = await response.json();
+
+    // Merge new role into the existing user_data cookie
+    const existing = cookieStore.get("user_data")?.value;
+    let userData: Record<string, unknown> = {};
+    try {
+      userData = existing ? JSON.parse(existing) : {};
+    } catch {}
+
+    const merged = { ...userData, ...updatedUser };
+
+    cookieStore.set("user_data", JSON.stringify(merged), {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24 * 7,
+      path: "/",
+    });
+  } catch (error) {
+    console.error("Error activando organizador:", error);
+    return { error: "Error de conexión con el servidor. Intenta nuevamente más tarde." };
+  }
+
+  // Redirect outside the try/catch so Next.js redirect() works correctly
+  redirect("/dashboard");
 }
 
 export async function verifyEmail(token: string) {

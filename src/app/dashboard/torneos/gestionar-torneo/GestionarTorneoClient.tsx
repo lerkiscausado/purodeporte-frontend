@@ -31,6 +31,7 @@ import { DatePickerStrip } from "@/components/DatePickerStrip";
 import { getInscripcionesPorTorneo, deleteInscripcion } from "@/app/actions/inscripciones";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
+import { CancelarPartidoModal } from "@/components/CancelarPartidoModal";
 
 interface GestionarTorneoClientProps {
   torneo: any;
@@ -815,11 +816,18 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                             <span className="truncate font-semibold">{partido.escenario?.nombre || "Por definir"}</span>
                           </div>
                           {partido.descripcion && (
-                            <div className="text-[10px] text-muted-foreground/80 italic pt-1.5 border-t border-border/30">
-                              {partido.descripcion}
-                            </div>
+                            partido.estado === "Cancelado" ? (
+                              <div className="flex items-start gap-1.5 text-[10px] pt-1.5 border-t border-destructive/20">
+                                <span className="font-black text-destructive/70 uppercase tracking-wider shrink-0">Motivo:</span>
+                                <span className="text-destructive/80 font-semibold">{partido.descripcion}</span>
+                              </div>
+                            ) : (
+                              <div className="text-[10px] text-muted-foreground/80 italic pt-1.5 border-t border-border/30">
+                                {partido.descripcion}
+                              </div>
+                            )
                           )}
-                          <div className="pt-2 border-t border-border/20">
+                          <div className="pt-2 border-t border-border/20 space-y-2">
                             <Link href={`/dashboard/torneos/gestionar-torneo/partido-periodos?id=${torneo.id}&partidoId=${partido.id}`} className="w-full block">
                               <Button
                                 size="sm"
@@ -830,6 +838,11 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                                 Controlar Periodos
                               </Button>
                             </Link>
+                            {partido.estado !== "Cancelado" && partido.estado !== "Finalizado" && (
+                              <div className="flex justify-center">
+                                <CancelarPartidoModal partido={partido} />
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>

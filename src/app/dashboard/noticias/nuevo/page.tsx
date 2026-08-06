@@ -19,6 +19,7 @@ import {
 } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 import { createNoticia } from "@/app/actions/noticias";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 export default function RegistrarNoticiaPage() {
   const [error, setError] = useState<string | null>(null);
@@ -26,6 +27,7 @@ export default function RegistrarNoticiaPage() {
   const [isPending, startTransition] = useTransition();
 
   const [deporte, setDeporte] = useState<string>("Futbol");
+  const [descripcionHtml, setDescripcionHtml] = useState<string>("");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -159,15 +161,15 @@ export default function RegistrarNoticiaPage() {
 
             {/* Descripción */}
             <div className="space-y-2">
-              <Label htmlFor="descripcion" className="font-bold text-sm">Contenido o Descripción Completa</Label>
-              <textarea
-                id="descripcion"
-                name="descripcion"
-                rows={6}
+              <Label className="font-bold text-sm">Contenido o Descripción Completa</Label>
+              <RichTextEditor
+                value={descripcionHtml}
+                onChange={setDescripcionHtml}
                 placeholder="Escribe el cuerpo completo de la noticia..."
-                required
-                className="w-full bg-card border border-border/60 rounded-sm p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                minHeight="200px"
               />
+              {/* Hidden input so FormData picks up the HTML value */}
+              <input type="hidden" name="descripcion" value={descripcionHtml} />
             </div>
 
             {/* Foto Destacada */}

@@ -1,21 +1,101 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Torneo, Partido } from "@/types";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { PartidoItem } from "@/components/PartidoItem";
 import { FaUsers, FaTrophy, FaCalendarAlt, FaUser } from "react-icons/fa";
+import { Heart } from "lucide-react";
+import { agregarFavorito, eliminarFavorito } from "@/app/actions/favoritos";
+
+export function FavoritoButton({
+  torneoId,
+  initialIsFavorito = false,
+  isAuthenticated = false,
+}: {
+  torneoId: number;
+  initialIsFavorito?: boolean;
+  isAuthenticated?: boolean;
+}) {
+  const router = useRouter();
+  const [isFav, setIsFav] = useState(initialIsFavorito);
+  const [isPending, setIsPending] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  const handleToggle = async () => {
+    if (!isAuthenticated) {
+      router.push("/login");
+      return;
+    }
+
+    if (isPending) return;
+
+    const previousState = isFav;
+    setIsFav(!previousState);
+    setErrorMsg(null);
+    setIsPending(true);
+
+    try {
+      const res = previousState
+        ? await eliminarFavorito(torneoId)
+        : await agregarFavorito(torneoId);
+
+      if (!res.success) {
+        setIsFav(previousState);
+        setErrorMsg(res.error || "Error al actualizar favoritos.");
+      }
+    } catch {
+      setIsFav(previousState);
+      setErrorMsg("Error de conexión al actualizar favoritos.");
+    } finally {
+      setIsPending(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-col items-end gap-1">
+      <button
+        type="button"
+        onClick={handleToggle}
+        disabled={isPending}
+        title={isFav ? "Quitar de favoritos" : "Agregar a favoritos"}
+        className={`inline-flex items-center gap-2 px-3 py-1.5 text-xs font-bold uppercase tracking-wider rounded-sm border transition-all duration-200 cursor-pointer ${
+          isFav
+            ? "bg-rose-500/10 text-rose-500 border-rose-500/30 hover:bg-rose-500/20"
+            : "bg-card text-muted-foreground border-border/60 hover:text-rose-500 hover:border-rose-500/30 hover:bg-rose-500/5"
+        }`}
+      >
+        <Heart
+          className={`h-4 w-4 transition-transform active:scale-125 ${
+            isFav ? "fill-rose-500 text-rose-500" : ""
+          }`}
+        />
+        <span>{isFav ? "Favorito" : "Agregar a Favoritos"}</span>
+      </button>
+      {errorMsg && (
+        <span className="text-[10px] text-destructive font-semibold">
+          {errorMsg}
+        </span>
+      )}
+    </div>
+  );
+}
 
 interface TorneoDetailClientProps {
   torneo: Torneo;
   inscripciones: any[];
   partidos: Partido[];
+  isFavorito?: boolean;
+  isAuthenticated?: boolean;
 }
 
 export function TorneoDetailClient({
   torneo,
   inscripciones,
   partidos,
+  isFavorito = false,
+  isAuthenticated = false,
 }: TorneoDetailClientProps) {
   const [activeTab, setActiveTab] = useState<"posiciones" | "equipos" | "partidos">("posiciones");
 

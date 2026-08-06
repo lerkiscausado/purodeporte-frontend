@@ -9,6 +9,7 @@ import { FaEdit, FaCheck, FaTimes, FaFutbol, FaBasketballBall, FaVolleyballBall,
 import { updateNoticia } from "@/app/actions/noticias";
 import { getUploadUrl } from "@/lib/uploads";
 import { cn } from "@/lib/utils";
+import { RichTextEditor } from "@/components/RichTextEditor";
 
 interface EditNoticiaModalProps {
   noticia: {
@@ -27,6 +28,7 @@ export function EditNoticiaModal({ noticia }: EditNoticiaModalProps) {
   const [success, setSuccess] = useState(false);
   const [isPending, startTransition] = useTransition();
   const [deporte, setDeporte] = useState(noticia.deporte || "Futbol");
+  const [descripcionHtml, setDescripcionHtml] = useState(noticia.descripcion || "");
   const router = useRouter();
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -171,15 +173,15 @@ export function EditNoticiaModal({ noticia }: EditNoticiaModalProps) {
 
             {/* Descripción */}
             <div className="space-y-2">
-              <Label htmlFor="edit-descripcion" className="font-bold text-sm">Contenido de la Noticia</Label>
-              <textarea
-                id="edit-descripcion"
-                name="descripcion"
-                rows={5}
-                defaultValue={noticia.descripcion}
-                required
-                className="w-full bg-background/50 border border-border rounded-sm p-3 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+              <Label className="font-bold text-sm">Contenido de la Noticia</Label>
+              <RichTextEditor
+                value={descripcionHtml}
+                onChange={setDescripcionHtml}
+                placeholder="Escribe el cuerpo completo de la noticia..."
+                minHeight="180px"
               />
+              {/* Hidden input so FormData picks up the HTML value */}
+              <input type="hidden" name="descripcion" value={descripcionHtml} />
             </div>
 
             {/* Foto (Opcional) */}

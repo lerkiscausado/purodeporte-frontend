@@ -1,5 +1,5 @@
-"use client";
 
+"use client";
 import { useState, useEffect, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -104,11 +104,10 @@ export function MobileMenu({ isAuthenticated, user }: MobileMenuProps) {
                       key={href}
                       href={href}
                       onClick={() => setOpen(false)}
-                      className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold transition-all duration-200 ${
-                        isActive
+                      className={`flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold transition-all duration-200 ${isActive
                           ? "bg-primary/15 text-primary"
                           : "text-white/70 hover:bg-white/10 hover:text-white active:bg-white/15"
-                      }`}
+                        }`}
                     >
                       <Icon className="h-5 w-5 shrink-0" />
                       {label}
