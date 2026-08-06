@@ -827,23 +827,27 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                               </div>
                             )
                           )}
-                          <div className="pt-2 border-t border-border/20 space-y-2">
-                            <Link href={`/dashboard/torneos/gestionar-torneo/partido-periodos?id=${torneo.id}&partidoId=${partido.id}`} className="w-full block">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="w-full font-bold text-[10px] uppercase tracking-wider h-8 rounded-sm gap-1.5 border-primary/30 text-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
-                              >
-                                <FaClipboardList className="h-3 w-3" />
-                                Controlar Periodos
-                              </Button>
-                            </Link>
-                            {partido.estado !== "Cancelado" && partido.estado !== "Finalizado" && (
-                              <div className="flex justify-center">
-                                <CancelarPartidoModal partido={partido} />
-                              </div>
-                            )}
-                          </div>
+                          {partido.estado !== "Cancelado" && (
+                            <div className="pt-2 border-t border-border/20 space-y-2">
+                              {partido.estado !== "Cancelado" && (
+                                <Link href={`/dashboard/torneos/gestionar-torneo/partido-periodos?id=${torneo.id}&partidoId=${partido.id}`} className="w-full block">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="w-full font-bold text-[10px] uppercase tracking-wider h-8 rounded-sm gap-1.5 border-primary/30 text-primary hover:bg-primary/5 hover:text-primary transition-all duration-200"
+                                  >
+                                    <FaClipboardList className="h-3 w-3" />
+                                    Controlar Periodos
+                                  </Button>
+                                </Link>
+                              )}
+                              {partido.estado !== "Cancelado" && partido.estado !== "Finalizado" && (
+                                <div className="flex justify-center">
+                                  <CancelarPartidoModal partido={partido} />
+                                </div>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}
