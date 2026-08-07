@@ -14,6 +14,7 @@ import {
   FaUserCircle,
   FaColumns,
   FaSignOutAlt,
+  FaHeart,
 } from "react-icons/fa";
 import { logout } from "@/app/actions/auth";
 import { getUploadUrl } from "@/lib/uploads";
@@ -46,6 +47,10 @@ export function MobileMenu({ isAuthenticated, user }: MobileMenuProps) {
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
+
+  const linksToRender = isAuthenticated
+    ? [...navLinks, { href: "/favoritos", label: "Favoritos", icon: FaHeart }]
+    : navLinks;
 
   // Cerrar el menú automáticamente al cambiar de ruta
   useEffect(() => {
@@ -97,7 +102,7 @@ export function MobileMenu({ isAuthenticated, user }: MobileMenuProps) {
             <div className="flex flex-col min-h-full">
               {/* Links de navegación */}
               <div className="px-4 pt-6 pb-2 space-y-1">
-                {navLinks.map(({ href, label, icon: Icon }) => {
+                {linksToRender.map(({ href, label, icon: Icon }) => {
                   const isActive = pathname === href;
                   return (
                     <Link
