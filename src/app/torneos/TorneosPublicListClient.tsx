@@ -22,11 +22,19 @@ import {
   FaArrowRight,
 } from "react-icons/fa";
 
+import { Trash2 } from "lucide-react";
+
 interface TorneosPublicListClientProps {
   initialTorneos: Torneo[];
+  mode?: "public" | "favoritos";
+  onRemoveFavorito?: (torneoId: number) => void;
 }
 
-export function TorneosPublicListClient({ initialTorneos }: TorneosPublicListClientProps) {
+export function TorneosPublicListClient({
+  initialTorneos,
+  mode = "public",
+  onRemoveFavorito,
+}: TorneosPublicListClientProps) {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
@@ -153,7 +161,12 @@ export function TorneosPublicListClient({ initialTorneos }: TorneosPublicListCli
         /* VISTA DE TARJETAS (CARDS) */
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
           {filteredTorneos.map((torneo) => (
-            <CardTorneo key={torneo.id} torneo={torneo} />
+            <CardTorneo
+              key={torneo.id}
+              torneo={torneo}
+              mode={mode}
+              onRemoveFavorito={onRemoveFavorito}
+            />
           ))}
         </div>
       ) : (
@@ -239,12 +252,22 @@ export function TorneosPublicListClient({ initialTorneos }: TorneosPublicListCli
 
                       {/* Acción */}
                       <td className="px-4 py-3">
-                        <div className="flex items-center justify-center">
+                        <div className="flex items-center justify-center gap-2">
                           <Link href={`/torneos/${torneo.id}`}>
                             <Button size="sm" variant="ghost" className="font-bold text-xs text-primary hover:text-primary hover:bg-primary/10 gap-1 h-7 px-2">
                               Ver detalles <FaArrowRight className="h-3 w-3" />
                             </Button>
                           </Link>
+                          {mode === "favoritos" && onRemoveFavorito && (
+                            <button
+                              type="button"
+                              onClick={() => onRemoveFavorito(Number(torneo.id))}
+                              title="Quitar de Favoritos"
+                              className="p-1.5 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-sm transition-colors cursor-pointer shrink-0"
+                            >
+                              <Trash2 className="h-4 w-4 text-rose-500" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>

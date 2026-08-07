@@ -2,12 +2,15 @@ import { Torneo } from "@/types";
 import { Badge } from "./ui/badge";
 import Link from "next/link";
 import { FaFutbol, FaBasketballBall, FaVolleyballBall, FaTrophy, FaMapMarkerAlt, FaRunning } from "react-icons/fa";
+import { Trash2 } from "lucide-react";
 
 interface CardTorneoProps {
   torneo: Torneo;
+  mode?: "public" | "favoritos";
+  onRemoveFavorito?: (torneoId: number) => void;
 }
 
-export function CardTorneo({ torneo }: CardTorneoProps) {
+export function CardTorneo({ torneo, mode = "public", onRemoveFavorito }: CardTorneoProps) {
   const getBadgeVariant = (estado: Torneo["estado"]) => {
     switch (estado) {
       case "En Juego": return "default";
@@ -48,6 +51,20 @@ export function CardTorneo({ torneo }: CardTorneoProps) {
             <div className="flex items-center gap-1.5 text-muted-foreground/60 min-w-0">
               {getSportIcon(torneo.deporte)}
               <span className="text-[10px] font-bold uppercase tracking-wider truncate">{torneo.deporte}</span>
+              {mode === "favoritos" && onRemoveFavorito && (
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onRemoveFavorito(Number(torneo.id));
+                  }}
+                  title="Quitar de Favoritos"
+                  className="p-1 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-sm transition-colors cursor-pointer ml-1 shrink-0"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              )}
             </div>
           </div>
           <p className="text-sm font-black leading-snug group-hover:text-primary transition-colors uppercase tracking-tight line-clamp-2" title={tournamentName}>

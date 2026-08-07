@@ -85,11 +85,6 @@ export default async function TorneoDetailPage({ params }: PageProps) {
       (f.torneo && Number(f.torneo.id) === torneoId)
   );
 
-  // Resolver imagen de portada/banner si existe
-  const fotoRaw = (torneo as any).foto || (torneo as any).imagenUrl || torneo.fotoUrl;
-  const hasCustomFoto = Boolean((torneo as any).foto || (torneo as any).imagenUrl);
-  const bannerUrl = hasCustomFoto ? getUploadUrl("torneos", fotoRaw) : null;
-
   // Resolver reglamento PDF si existe
   const reglamentoRaw = (torneo as any).reglamento || torneo.reglamentoUrl;
   const reglamentoUrl = reglamentoRaw
@@ -112,18 +107,6 @@ export default async function TorneoDetailPage({ params }: PageProps) {
       >
         <FaArrowLeft className="h-3 w-3" /> Volver a Torneos
       </Link>
-
-      {/* Banner / Portada del Torneo */}
-      {bannerUrl && (
-        <div className="relative h-48 sm:h-64 md:h-80 w-full rounded-sm overflow-hidden border border-border/60 shadow-md">
-          <img
-            src={bannerUrl}
-            alt={torneo.nombre}
-            className="w-full h-full object-cover"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-        </div>
-      )}
 
       {/* Header Resumen del Torneo (Información Fija) */}
       <div className="bg-card border border-border/60 rounded-sm p-6 shadow-sm space-y-4">

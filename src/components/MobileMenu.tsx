@@ -156,15 +156,17 @@ export function MobileMenu({ isAuthenticated, user }: MobileMenuProps) {
                       </div>
                     </div>
 
-                    {/* Link a Dashboard */}
-                    <Link
-                      href="/dashboard"
-                      onClick={() => setOpen(false)}
-                      className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 active:bg-white/15"
-                    >
-                      <FaColumns className="h-5 w-5 shrink-0" />
-                      Panel Administrativo
-                    </Link>
+                    {/* Link a Dashboard (solo para manager o admin) */}
+                    {(user.role === "manager" || user.role === "admin") && (
+                      <Link
+                        href="/dashboard"
+                        onClick={() => setOpen(false)}
+                        className="flex items-center gap-4 px-4 py-3.5 rounded-xl text-base font-semibold text-white/70 hover:bg-white/10 hover:text-white transition-all duration-200 active:bg-white/15"
+                      >
+                        <FaColumns className="h-5 w-5 shrink-0" />
+                        Panel Administrativo
+                      </Link>
+                    )}
 
                     {/* Cerrar Sesión */}
                     <button

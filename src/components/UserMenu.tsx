@@ -95,7 +95,7 @@ export function UserMenu({ userName, userEmail, userRole, userFoto }: UserMenuPr
           {/* Opciones del menú */}
           <div className="py-1">
             <Link
-              href="/dashboard/perfil"
+              href="/perfil"
               onClick={() => setOpen(false)}
               className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors"
             >
@@ -104,17 +104,19 @@ export function UserMenu({ userName, userEmail, userRole, userFoto }: UserMenuPr
             </Link>
           </div>
 
-          {/* Panel Administrativo */}
-          <div className="py-1">
-            <Link
-              href="/dashboard"
-              onClick={() => setOpen(false)}
-              className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors"
-            >
-              <FaColumns className="h-4 w-4" />
-              Panel Administrativo
-            </Link>
-          </div>
+          {/* Panel Administrativo (solo para manager o admin) */}
+          {(userRole === "manager" || userRole === "admin") && (
+            <div className="py-1">
+              <Link
+                href="/dashboard"
+                onClick={() => setOpen(false)}
+                className="flex items-center gap-3 px-4 py-2.5 text-sm text-white/70 hover:bg-white/10 hover:text-white transition-colors"
+              >
+                <FaColumns className="h-4 w-4" />
+                Panel Administrativo
+              </Link>
+            </div>
+          )}
 
           {/* Cerrar sesión */}
           <div className="border-t border-white/10 py-1">

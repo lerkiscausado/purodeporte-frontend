@@ -1,11 +1,22 @@
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { FaUserCircle, FaEnvelope, FaPhone, FaShieldAlt, FaCalendarAlt, FaBirthdayCake, FaVenusMars, FaMapMarkerAlt } from "react-icons/fa";
+import { Trophy } from "lucide-react";
 import { EditProfileModal } from "@/components/EditProfileModal";
+import { ActivarOrganizadorButton } from "@/components/ActivarOrganizadorButton";
 import { getUploadUrl } from "@/lib/uploads";
+
+export const dynamic = "force-dynamic";
 
 export default async function PerfilPage() {
   const cookieStore = await cookies();
+  const sessionToken = cookieStore.get("session_token");
+
+  if (!sessionToken) {
+    redirect("/login");
+  }
+
   const userDataCookie = cookieStore.get("user_data");
 
   let user = {
@@ -55,7 +66,28 @@ export default async function PerfilPage() {
   };
 
   return (
-    <div className="space-y-8 max-w-3xl mx-auto">
+    <div className="container mx-auto px-4 py-8 space-y-8 max-w-3xl flex-1">
+      {/* Seguidor Banner + Activation CTA (solo si role === 'user') */}
+      {user.role === "user" && (
+        <div className="bg-card border border-border/60 border-l-4 border-l-primary rounded-sm p-6 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-2 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-sm bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">
+              <Trophy className="h-3.5 w-3.5" />
+              Cuenta Seguidor / Aficionado
+            </div>
+            <h2 className="text-xl font-black uppercase tracking-tight text-foreground">
+              ¿Quieres organizar tus propios torneos?
+            </h2>
+            <p className="text-xs sm:text-sm text-muted-foreground leading-relaxed">
+              Activa tu cuenta de Organizador para crear torneos, inscribir equipos, administrar jugadores y publicar resultados.
+            </p>
+          </div>
+          <div className="shrink-0 w-full md:w-auto">
+            <ActivarOrganizadorButton />
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div>
         <h1 className="text-3xl font-black tracking-tight mb-1 uppercase">Mi Perfil</h1>

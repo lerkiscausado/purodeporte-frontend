@@ -219,52 +219,36 @@ export default function RegistrarTorneoPage() {
                   {deporte === "Voleibol" && <div className="absolute top-0 right-0 h-0.5 left-0 bg-primary" />}
                 </button>
 
-                {/* Microfútbol */}
+                {/* Microfútbol (Deshabilitado) */}
                 <button
                   type="button"
-                  onClick={() => setDeporte("Microfutbol")}
-                  className={cn(
-                    "flex flex-col items-center justify-center p-4 rounded-sm border bg-card text-center transition-all duration-200 cursor-pointer relative overflow-hidden group",
-                    deporte === "Microfutbol"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/40 shadow-sm"
-                      : "border-border/60 hover:border-border/100 hover:bg-muted/15"
-                  )}
+                  disabled
+                  className="flex flex-col items-center justify-center p-4 rounded-sm border border-border/40 bg-muted/10 text-center opacity-50 cursor-not-allowed relative overflow-hidden"
                 >
-                  <div className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center mb-2.5 transition-colors shrink-0",
-                    deporte === "Microfutbol"
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground group-hover:bg-muted/80 group-hover:text-foreground"
-                  )}>
-                    <FaFutbol className="h-5 w-5 text-sky-500" />
+                  <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-muted text-[8px] font-bold uppercase tracking-wider rounded-sm text-muted-foreground border border-border/40">
+                    Próximamente
+                  </span>
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center mb-2.5 bg-muted text-muted-foreground shrink-0">
+                    <FaFutbol className="h-5 w-5 text-sky-500/60" />
                   </div>
-                  <span className="text-xs font-black uppercase tracking-wider block">Microfútbol</span>
+                  <span className="text-xs font-black uppercase tracking-wider block text-muted-foreground">Microfútbol</span>
                   <span className="text-[9px] text-muted-foreground mt-1 font-semibold leading-normal block">Salón / Rápido</span>
-                  {deporte === "Microfutbol" && <div className="absolute top-0 right-0 h-0.5 left-0 bg-primary" />}
                 </button>
 
-                {/* Golito */}
+                {/* Golito (Deshabilitado) */}
                 <button
                   type="button"
-                  onClick={() => setDeporte("Golito")}
-                  className={cn(
-                    "flex flex-col items-center justify-center p-4 rounded-sm border bg-card text-center transition-all duration-200 cursor-pointer relative overflow-hidden group",
-                    deporte === "Golito"
-                      ? "border-primary bg-primary/5 ring-1 ring-primary/40 shadow-sm"
-                      : "border-border/60 hover:border-border/100 hover:bg-muted/15"
-                  )}
+                  disabled
+                  className="flex flex-col items-center justify-center p-4 rounded-sm border border-border/40 bg-muted/10 text-center opacity-50 cursor-not-allowed relative overflow-hidden"
                 >
-                  <div className={cn(
-                    "h-10 w-10 rounded-full flex items-center justify-center mb-2.5 transition-colors shrink-0",
-                    deporte === "Golito"
-                      ? "bg-primary/20 text-primary"
-                      : "bg-muted text-muted-foreground group-hover:bg-muted/80 group-hover:text-foreground"
-                  )}>
-                    <FaFutbol className="h-5 w-5 text-amber-500" />
+                  <span className="absolute top-1 right-1 px-1.5 py-0.5 bg-muted text-[8px] font-bold uppercase tracking-wider rounded-sm text-muted-foreground border border-border/40">
+                    Próximamente
+                  </span>
+                  <div className="h-10 w-10 rounded-full flex items-center justify-center mb-2.5 bg-muted text-muted-foreground shrink-0">
+                    <FaFutbol className="h-5 w-5 text-amber-500/60" />
                   </div>
-                  <span className="text-xs font-black uppercase tracking-wider block">Golito</span>
+                  <span className="text-xs font-black uppercase tracking-wider block text-muted-foreground">Golito</span>
                   <span className="text-[9px] text-muted-foreground mt-1 font-semibold leading-normal block">Calle / Recreativo</span>
-                  {deporte === "Golito" && <div className="absolute top-0 right-0 h-0.5 left-0 bg-primary" />}
                 </button>
               </div>
             </div>
