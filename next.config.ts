@@ -2,6 +2,14 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  experimental: {
+    serverActions: {
+      // Aumentado a 10 MB para permitir el envío de imágenes + HTML del editor
+      // mediante Server Actions (el límite por defecto de Next.js es 1 MB).
+      // Consistente con los límites configurados en Nginx y el backend.
+      bodySizeLimit: "10mb",
+    },
+  },
   images: {
     remotePatterns: [
       {
