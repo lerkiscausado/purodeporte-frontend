@@ -11,8 +11,9 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "PURO DEPORTE | Torneos y Resultados",
-  description: "Plataforma de gestión y visualización de torneos deportivos de barrio. Fútbol, baloncesto y más.",
+  metadataBase: new URL("https://purodeporte.co"),
+  title: "Puro Deporte | Torneos y Resultados",
+  description: "Torneos, estadísticas, resultados y programación de todas las ligas de tu barrio.",
 };
 
 export default function RootLayout({

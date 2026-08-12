@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import { getNoticiaBySlug } from "@/services/api";
 import { notFound } from "next/navigation";
 import Image from "next/image";
@@ -10,6 +11,57 @@ export const dynamic = "force-dynamic";
 interface PageProps {
   params: Promise<{ slug: string }>;
 }
+
+export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
+  const { slug } = await params;
+  const noticia = await getNoticiaBySlug(slug);
+
+  if (!noticia) {
+    return {
+      title: "Noticia no encontrada | Puro Deporte",
+    };
+  }
+
+  // Genera una descripción en texto plano a partir de descripcion/resumen,
+  // quitando etiquetas HTML (Tiptap) y recortando a ~160 caracteres.
+  const textoPlano = (noticia.resumen || noticia.descripcion || "")
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const descripcionCorta =
+    textoPlano.length > 160 ? textoPlano.slice(0, 157) + "..." : textoPlano;
+
+  const urlCanonica = `https://purodeporte.co/noticias/${noticia.slug || noticia.id}`;
+  const imagenOg = noticia.imagenUrl || "https://purodeporte.co/purodeporte.png";
+
+  return {
+    title: `${noticia.titulo} | Puro Deporte`,
+    description: descripcionCorta,
+    openGraph: {
+      title: noticia.titulo,
+      description: descripcionCorta,
+      url: urlCanonica,
+      siteName: "Puro Deporte",
+      images: [
+        {
+          url: imagenOg,
+          width: 1200,
+          height: 630,
+          alt: noticia.titulo,
+        },
+      ],
+      type: "article",
+      locale: "es_CO",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: noticia.titulo,
+      description: descripcionCorta,
+      images: [imagenOg],
+    },
+  };
+}
+
 
 /**
  * Normalises the descripcion field so both old plain-text entries and new
