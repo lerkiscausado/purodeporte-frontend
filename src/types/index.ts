@@ -41,7 +41,7 @@ export interface Partido {
     logoUrl?: string;
   };
   fecha: string;
-  estado: "Pendiente" | "En Juego" | "Finalizado" | "Cancelado";
+  estado: "Pendiente" | "En Juego" | "Finalizado" | "Cancelado" | "Suspendido";
   marcadorLocal?: number;
   marcadorVisitante?: number;
   tipoJuego?: "OFICIAL" | "AMISTOSO" | "LIGUILLA";

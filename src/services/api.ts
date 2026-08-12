@@ -79,9 +79,11 @@ export function mapPartidoBackendToPartido(item: any): Partido {
     fullDate = `${fechaStr}T${horaStr}`;
   }
 
-  let estado: "Pendiente" | "En Juego" | "Finalizado" = "Pendiente";
+  let estado: "Pendiente" | "En Juego" | "Finalizado" | "Cancelado" | "Suspendido" = "Pendiente";
   if (item.estado === "Finalizado") estado = "Finalizado";
   else if (item.estado === "En Juego") estado = "En Juego";
+  else if (item.estado === "Cancelado") estado = "Cancelado";
+  else if (item.estado === "Suspendido") estado = "Suspendido";
   else if (item.estado === "Programado" || item.estado === "Pendiente") estado = "Pendiente";
 
   const equipoLocalNombre = item.equipoLocal?.nombre || item.equipoLocal?.name || item.localNombre || "Equipo Local";

@@ -10,6 +10,7 @@ export function PartidoItem({ partido }: PartidoItemProps) {
   const isFinalizado = partido.estado === "Finalizado";
   const isEnJuego = partido.estado === "En Juego";
   const isCancelado = partido.estado === "Cancelado";
+  const isSuspendido = partido.estado === "Suspendido";
 
   const formattedDateTime = (() => {
     try {
@@ -23,7 +24,7 @@ export function PartidoItem({ partido }: PartidoItemProps) {
 
   return (
     <div className={`border-l-4 bg-card border border-border/60 rounded-sm p-3 transition-colors ${
-      isEnJuego ? 'border-l-primary' : isFinalizado ? 'border-l-muted-foreground/40' : isCancelado ? 'border-l-destructive/60' : 'border-l-border'
+      isEnJuego ? 'border-l-primary' : isFinalizado ? 'border-l-muted-foreground/40' : isCancelado ? 'border-l-destructive/60' : isSuspendido ? 'border-l-amber-500/60' : 'border-l-border'
     }`}>
       {/* Fecha + Estado */}
       <div className="flex items-center justify-between mb-2 gap-2">
@@ -34,7 +35,8 @@ export function PartidoItem({ partido }: PartidoItemProps) {
         {isEnJuego && <Badge variant="default" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm animate-pulse shrink-0">VIVO</Badge>}
         {isFinalizado && <Badge variant="secondary" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Final</Badge>}
         {isCancelado && <Badge variant="destructive" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Cancelado</Badge>}
-        {!isEnJuego && !isFinalizado && !isCancelado && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Pend.</Badge>}
+        {isSuspendido && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0 border-amber-500/50 text-amber-500 font-bold">Suspendido</Badge>}
+        {!isEnJuego && !isFinalizado && !isCancelado && !isSuspendido && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Pend.</Badge>}
       </div>
 
       {/* Equipos */}
