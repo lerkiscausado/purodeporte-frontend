@@ -9,6 +9,7 @@ interface PartidoItemProps {
 export function PartidoItem({ partido }: PartidoItemProps) {
   const isFinalizado = partido.estado === "Finalizado";
   const isEnJuego = partido.estado === "En Juego";
+  const isCancelado = partido.estado === "Cancelado";
 
   const formattedDateTime = (() => {
     try {
@@ -22,7 +23,7 @@ export function PartidoItem({ partido }: PartidoItemProps) {
 
   return (
     <div className={`border-l-4 bg-card border border-border/60 rounded-sm p-3 transition-colors ${
-      isEnJuego ? 'border-l-primary' : isFinalizado ? 'border-l-muted-foreground/40' : 'border-l-border'
+      isEnJuego ? 'border-l-primary' : isFinalizado ? 'border-l-muted-foreground/40' : isCancelado ? 'border-l-destructive/60' : 'border-l-border'
     }`}>
       {/* Fecha + Estado */}
       <div className="flex items-center justify-between mb-2 gap-2">
@@ -32,7 +33,8 @@ export function PartidoItem({ partido }: PartidoItemProps) {
         </span>
         {isEnJuego && <Badge variant="default" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm animate-pulse shrink-0">VIVO</Badge>}
         {isFinalizado && <Badge variant="secondary" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Final</Badge>}
-        {!isEnJuego && !isFinalizado && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Pend.</Badge>}
+        {isCancelado && <Badge variant="destructive" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Cancelado</Badge>}
+        {!isEnJuego && !isFinalizado && !isCancelado && <Badge variant="outline" className="text-[8px] tracking-widest uppercase h-4 px-1.5 rounded-sm shrink-0">Pend.</Badge>}
       </div>
 
       {/* Equipos */}

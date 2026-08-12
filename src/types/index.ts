@@ -41,7 +41,7 @@ export interface Partido {
     logoUrl?: string;
   };
   fecha: string;
-  estado: "Pendiente" | "En Juego" | "Finalizado";
+  estado: "Pendiente" | "En Juego" | "Finalizado" | "Cancelado";
   marcadorLocal?: number;
   marcadorVisitante?: number;
   tipoJuego?: "OFICIAL" | "AMISTOSO" | "LIGUILLA";
@@ -49,6 +49,8 @@ export interface Partido {
     nombre: string;
     direccion?: string;
   };
+  /** Motivo de cancelación cuando estado === "Cancelado". Reutiliza el mismo campo descripcion del backend. */
+  descripcion?: string;
 }
 
 export interface Noticia {
