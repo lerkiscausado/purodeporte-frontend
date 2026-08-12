@@ -55,9 +55,11 @@ export interface Partido {
 
 export interface Noticia {
   id: string;
+  slug: string;
   titulo: string;
   resumen: string;
   descripcion: string;
+  deporte: string;
   fecha: string;
   imagenUrl: string;
 }

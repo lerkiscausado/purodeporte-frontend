@@ -138,9 +138,11 @@ export function mapNoticiaBackendToNoticia(item: any): Noticia {
 
   return {
     id: String(item.id),
+    slug: item.slug || "",
     titulo: item.titulo || item.title || "Noticia sin título",
     resumen,
     descripcion: item.descripcion || item.resumen || "",
+    deporte: item.deporte || "",
     fecha,
     imagenUrl,
   };
@@ -253,6 +255,25 @@ export const getNoticias = async (): Promise<Noticia[]> => {
   } catch (error) {
     console.error("Error al obtener noticias públicas:", error);
     return [];
+  }
+};
+
+export const getNoticiaBySlug = async (slug: string): Promise<Noticia | null> => {
+  try {
+    const url = getApiUrl(`noticias/publica/${slug}`);
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+      if (res.status !== 404) {
+        console.error(`Error HTTP ${res.status} al consultar ${url}`);
+      }
+      return null;
+    }
+    const data = await res.json();
+    if (!data) return null;
+    return mapNoticiaBackendToNoticia(data);
+  } catch (error) {
+    console.error(`Error al obtener noticia por slug (${slug}):`, error);
+    return null;
   }
 };
 

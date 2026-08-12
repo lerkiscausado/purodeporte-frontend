@@ -2,6 +2,7 @@ import { cookies } from "next/headers";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { FaTrophy, FaUsers, FaChartLine, FaExclamationTriangle, FaEye, FaCalendarDay, FaCalendarWeek, FaCalendarAlt, FaRoute } from "react-icons/fa";
 import { getEstadisticasVisitas } from "@/app/actions/visitas";
+import { VisitasCharts } from "@/components/VisitasCharts";
 
 export default async function DashboardHome() {
   // Leer datos del usuario desde la cookie
@@ -136,6 +137,9 @@ export default async function DashboardHome() {
               </CardContent>
             </Card>
           </div>
+
+          {/* Gráficos visuales de Visitas */}
+          <VisitasCharts estadisticas={estadisticasVisitas} />
 
           {/* Tabla de rutas más visitadas */}
           {estadisticasVisitas.rutasMasVisitadas.length > 0 && (

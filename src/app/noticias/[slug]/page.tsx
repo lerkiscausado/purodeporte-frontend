@@ -1,4 +1,4 @@
-import { getNoticias } from "@/services/api";
+import { getNoticiaBySlug } from "@/services/api";
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import DOMPurify from "isomorphic-dompurify";
 export const dynamic = "force-dynamic";
 
 interface PageProps {
-  params: Promise<{ id: string }>;
+  params: Promise<{ slug: string }>;
 }
 
 /**
@@ -32,9 +32,8 @@ function prepareContent(raw: string): string {
 }
 
 export default async function NoticiaDetailPage({ params }: PageProps) {
-  const { id } = await params;
-  const noticias = await getNoticias();
-  const noticia = noticias.find((n) => String(n.id) === String(id));
+  const { slug } = await params;
+  const noticia = await getNoticiaBySlug(slug);
 
   if (!noticia) {
     notFound();

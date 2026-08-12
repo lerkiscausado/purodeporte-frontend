@@ -9,6 +9,10 @@ export interface EstadisticasVisitas {
   visitasUltimos7Dias: number;
   visitasUltimos30Dias: number;
   rutasMasVisitadas: { ruta: string; cantidad: number }[];
+  dispositivos?: {
+    movil: number;
+    escritorio: number;
+  };
 }
 
 /**
