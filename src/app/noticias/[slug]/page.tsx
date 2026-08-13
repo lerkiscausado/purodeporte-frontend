@@ -104,12 +104,14 @@ export default async function NoticiaDetailPage({ params }: PageProps) {
 
       <article className="bg-card border border-border/60 rounded-sm overflow-hidden shadow-lg">
         {noticia.imagenUrl && (
-          <div className="relative h-72 md:h-96 w-full">
+          <div className="w-full">
             <Image
               src={noticia.imagenUrl}
               alt={noticia.titulo}
-              fill
-              className="object-cover"
+              width={1200}
+              height={630}
+              className="w-full h-auto object-contain rounded-t-sm"
+              sizes="(max-width: 768px) 100vw, 768px"
               priority
             />
           </div>
