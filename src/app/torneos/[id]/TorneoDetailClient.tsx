@@ -1,13 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Torneo, Partido } from "@/types";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { PartidoItem } from "@/components/PartidoItem";
-import { FaUsers, FaTrophy, FaCalendarAlt, FaUser } from "react-icons/fa";
+import {
+  FaUsers,
+  FaTrophy,
+  FaCalendarAlt,
+  FaUser,
+  FaMedal,
+  FaSpinner,
+} from "react-icons/fa";
 import { Heart } from "lucide-react";
 import { agregarFavorito, eliminarFavorito } from "@/app/actions/favoritos";
+import {
+  getLideresPorTorneo,
+  getTiposEstadisticaPorDeporte,
+} from "@/app/actions/estadisticas";
 
 export function FavoritoButton({
   torneoId,
@@ -97,7 +108,56 @@ export function TorneoDetailClient({
   isFavorito = false,
   isAuthenticated = false,
 }: TorneoDetailClientProps) {
-  const [activeTab, setActiveTab] = useState<"posiciones" | "equipos" | "partidos">("posiciones");
+  const [activeTab, setActiveTab] = useState<
+    "posiciones" | "partidos" | "equipos" | "lideres"
+  >("posiciones");
+
+  const [lideres, setLideres] = useState<any[]>([]);
+  const [loadingLideres, setLoadingLideres] = useState<boolean>(false);
+  const [filtroTipoId, setFiltroTipoId] = useState<string>("all");
+  const [tiposEstadistica, setTiposEstadistica] = useState<any[]>([]);
+
+  const isFutbol = Boolean(
+    torneo.deporte?.toLowerCase().includes("futbol") ||
+      torneo.deporte?.toLowerCase().includes("fútbol") ||
+      torneo.deporte?.toLowerCase().includes("soccer") ||
+      torneo.deporte?.toLowerCase().includes("futsal") ||
+      torneo.deporte?.toLowerCase().includes("golito")
+  );
+
+  // Cargar catálogo de tipos de estadística si es fútbol
+  useEffect(() => {
+    if (isFutbol) {
+      getTiposEstadisticaPorDeporte(torneo.deporte || "Futbol").then((res) => {
+        setTiposEstadistica(Array.isArray(res) ? res : []);
+      });
+    }
+  }, [isFutbol, torneo.deporte]);
+
+  // Cargar líderes del torneo
+  useEffect(() => {
+    let isMounted = true;
+    setLoadingLideres(true);
+    const tipoId = filtroTipoId !== "all" ? Number(filtroTipoId) : undefined;
+
+    getLideresPorTorneo(Number(torneo.id), tipoId)
+      .then((res) => {
+        if (isMounted) {
+          setLideres(Array.isArray(res) ? res : []);
+        }
+      })
+      .catch((err) => {
+        console.error("Error al cargar líderes:", err);
+        if (isMounted) setLideres([]);
+      })
+      .finally(() => {
+        if (isMounted) setLoadingLideres(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [torneo.id, filtroTipoId]);
 
   const proximosPartidos = partidos
     .filter((p) => p.estado === "Pendiente")
@@ -113,11 +173,11 @@ export function TorneoDetailClient({
 
   return (
     <div className="space-y-6">
-      {/* Navegación por pestañas (Estilo GestionarTorneoClient) */}
+      {/* Navegación por pestañas (Posiciones -> Partidos -> Equipos -> Líderes) */}
       <div className="bg-[oklch(0.25_0.05_255)] border border-white/10 shadow-md p-1.5 rounded-sm flex gap-2 w-full md:w-fit overflow-x-auto">
         <button
           onClick={() => setActiveTab("posiciones")}
-          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 ${
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 cursor-pointer ${
             activeTab === "posiciones"
               ? "bg-primary text-primary-foreground shadow"
               : "text-white/60 hover:text-white hover:bg-white/5"
@@ -138,7 +198,7 @@ export function TorneoDetailClient({
 
         <button
           onClick={() => setActiveTab("partidos")}
-          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 ${
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 cursor-pointer ${
             activeTab === "partidos"
               ? "bg-primary text-primary-foreground shadow"
               : "text-white/60 hover:text-white hover:bg-white/5"
@@ -159,7 +219,7 @@ export function TorneoDetailClient({
 
         <button
           onClick={() => setActiveTab("equipos")}
-          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 ${
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 cursor-pointer ${
             activeTab === "equipos"
               ? "bg-primary text-primary-foreground shadow"
               : "text-white/60 hover:text-white hover:bg-white/5"
@@ -176,6 +236,29 @@ export function TorneoDetailClient({
           >
             {inscripciones.length}
           </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("lideres")}
+          className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-6 py-2.5 text-xs font-bold uppercase tracking-wider rounded-sm transition-all duration-200 cursor-pointer ${
+            activeTab === "lideres"
+              ? "bg-primary text-primary-foreground shadow"
+              : "text-white/60 hover:text-white hover:bg-white/5"
+          }`}
+        >
+          <FaMedal className="h-4 w-4" />
+          Líderes
+          {lideres.length > 0 && (
+            <span
+              className={`ml-1 text-[10px] px-1.5 py-0.5 rounded-sm font-bold ${
+                activeTab === "lideres"
+                  ? "bg-primary-foreground/20 text-primary-foreground"
+                  : "bg-white/10 text-white/60"
+              }`}
+            >
+              {lideres.length}
+            </span>
+          )}
         </button>
       </div>
 
@@ -378,6 +461,145 @@ export function TorneoDetailClient({
                   </div>
                 );
               })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Cuarta Pestaña: Líderes */}
+      {activeTab === "lideres" && (
+        <div className="bg-card border border-border/60 rounded-sm shadow-sm overflow-hidden space-y-0">
+          <div className="p-4 border-b border-border/60 flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-muted/20">
+            <div className="flex items-center gap-2">
+              <FaMedal className="h-4 w-4 text-primary" />
+              <h3 className="text-sm font-black uppercase tracking-wider text-foreground">
+                Tabla de Líderes y Estadísticas
+              </h3>
+            </div>
+
+            {/* Selector de filtro para Fútbol (Goles vs General) */}
+            {isFutbol && (
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider">
+                  Filtro:
+                </span>
+                <select
+                  value={filtroTipoId}
+                  onChange={(e) => setFiltroTipoId(e.target.value)}
+                  className="h-8 bg-card border border-border/60 rounded-sm text-xs font-bold px-2.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary"
+                >
+                  <option value="all">Ranking General (Puntos)</option>
+                  {tiposEstadistica.map((tipo) => (
+                    <option key={tipo.id} value={tipo.id.toString()}>
+                      Solo {tipo.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </div>
+
+          {loadingLideres ? (
+            <div className="p-12 text-center text-xs font-semibold text-muted-foreground flex items-center justify-center gap-2">
+              <FaSpinner className="animate-spin h-4 w-4 text-primary" />
+              Cargando tabla de líderes...
+            </div>
+          ) : lideres.length === 0 ? (
+            <div className="p-12 text-center text-muted-foreground text-sm font-medium">
+              Aún no se han registrado estadísticas en este torneo.
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead className="bg-muted/50 uppercase tracking-wider text-[10px] font-bold text-muted-foreground border-b border-border/60">
+                  <tr>
+                    <th className="py-3 px-3 text-center w-12">#</th>
+                    <th className="py-3 px-4">Jugador</th>
+                    <th className="py-3 px-4">Equipo</th>
+                    <th className="py-3 px-4 text-center bg-primary/10 text-primary font-black w-28">
+                      {filtroTipoId !== "all"
+                        ? (tiposEstadistica.find(
+                            (t) => t.id.toString() === filtroTipoId
+                          )?.nombre || "Total")
+                        : "Puntos"}
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border/40 font-medium">
+                  {lideres.map((item, idx) => {
+                    const jugador = item.jugador || {};
+                    const jNombre =
+                      `${jugador.nombres || jugador.nombre || ""} ${
+                        jugador.apellidos || jugador.apellido || ""
+                      }`.trim() || `Jugador #${jugador.id || idx + 1}`;
+                    const equipo = item.equipo || {};
+                    const eqNombre = equipo.nombre || "Equipo";
+                    const eqFoto =
+                      equipo.foto || equipo.escudo || equipo.logoUrl || null;
+
+                    const valorTotal =
+                      filtroTipoId !== "all"
+                        ? item.totalCantidad ??
+                          item.total ??
+                          item.totalPuntos ??
+                          0
+                        : item.totalPuntos ?? item.total ?? 0;
+
+                    return (
+                      <tr
+                        key={idx}
+                        className="hover:bg-muted/30 transition-colors"
+                      >
+                        <td className="py-3 px-3 text-center font-black">
+                          {idx === 0 ? (
+                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-500/20 text-amber-500 text-xs font-black">
+                              1
+                            </span>
+                          ) : idx === 1 ? (
+                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-slate-400/20 text-slate-300 text-xs font-black">
+                              2
+                            </span>
+                          ) : idx === 2 ? (
+                            <span className="inline-flex items-center justify-center h-6 w-6 rounded-full bg-amber-700/20 text-amber-600 text-xs font-black">
+                              3
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground font-semibold">
+                              {idx + 1}
+                            </span>
+                          )}
+                        </td>
+                        <td className="py-3 px-4">
+                          <span
+                            className="font-bold text-foreground text-xs uppercase truncate max-w-[200px] block"
+                            title={jNombre}
+                          >
+                            {jNombre}
+                          </span>
+                        </td>
+                        <td className="py-3 px-4">
+                          <div className="flex items-center gap-2.5">
+                            <EquipoAvatar
+                              nombre={eqNombre}
+                              foto={eqFoto}
+                              size="xs"
+                            />
+                            <span
+                              className="font-bold text-muted-foreground text-xs uppercase truncate max-w-[180px]"
+                              title={eqNombre}
+                            >
+                              {eqNombre}
+                            </span>
+                          </div>
+                        </td>
+                        <td className="py-3 px-4 text-center bg-primary/5 text-primary font-black font-mono text-sm">
+                          {valorTotal}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
             </div>
           )}
         </div>
