@@ -16,10 +16,12 @@ import {
   FaVolleyballBall,
   FaChevronDown,
   FaUser,
+  FaPlus,
 } from "react-icons/fa";
 import Link from "next/link";
 import { getMisEquipos } from "@/app/actions/equipos";
 import { getInscripcionesPorTorneo, createInscripcion } from "@/app/actions/inscripciones";
+import { CrearEquipoRapidoModal } from "@/components/CrearEquipoRapidoModal";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
 
@@ -31,6 +33,8 @@ interface TeamSelectProps {
   disabled?: boolean;
   disabledPlaceholder?: string;
   icon?: React.ReactNode;
+  torneoDeporte?: string;
+  onOpenCrearModal?: (nombreInicial: string) => void;
 }
 
 function TeamSelect({
@@ -41,6 +45,8 @@ function TeamSelect({
   disabled = false,
   disabledPlaceholder = "Selecciona un equipo",
   icon,
+  torneoDeporte,
+  onOpenCrearModal,
 }: TeamSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -145,8 +151,22 @@ function TeamSelect({
 
           <div className="max-h-60 overflow-y-auto scrollbar-thin py-1">
             {filteredTeams.length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground font-semibold">
-                No se encontraron equipos
+              <div className="p-4 text-center text-xs text-muted-foreground font-semibold space-y-2.5">
+                <p>No se encontraron equipos</p>
+                {onOpenCrearModal && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsOpen(false);
+                      onOpenCrearModal(search);
+                      setSearch("");
+                    }}
+                    className="inline-flex items-center justify-center gap-1.5 w-full px-3 py-2 bg-primary/10 hover:bg-primary/20 text-primary border border-primary/30 rounded-sm font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                  >
+                    <FaPlus className="h-3 w-3" />
+                    Crear nuevo equipo {search.trim() ? `"${search.trim()}"` : ""}
+                  </button>
+                )}
               </div>
             ) : (
               filteredTeams.map((team) => {
@@ -216,7 +236,17 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
   const [inscripciones, setInscripciones] = useState<any[]>([]);
   const [loadingInscripciones, setLoadingInscripciones] = useState<boolean>(true);
 
+  // Estado para creación rápida de equipo
+  const [isCrearModalOpen, setIsCrearModalOpen] = useState<boolean>(false);
+  const [nombreCrearInicial, setNombreCrearInicial] = useState<string>("");
+
   const router = useRouter();
+
+  const handleEquipoCreado = (nuevoEquipo: any) => {
+    setAllEquipos((prev) => [nuevoEquipo, ...prev]);
+    setSelectedEquipoId(nuevoEquipo.id.toString());
+    setError(null);
+  };
 
   useEffect(() => {
     async function loadData() {
@@ -383,13 +413,24 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
                   Cargando información del sistema...
                 </div>
               ) : equiposFiltradosPorDeporte.length === 0 ? (
-                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-sm text-amber-500 text-xs font-semibold space-y-2">
+                <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-sm text-amber-500 text-xs font-semibold space-y-3">
                   <p>
                     No hay equipos de la disciplina <strong>{torneo.deporte}</strong> disponibles para inscribir en este momento.
                   </p>
                   <p className="text-[11px] opacity-80 leading-normal">
                     Esto se debe a que todos los equipos elegibles ya han sido inscritos o aún no has registrado equipos que correspondan al deporte de este torneo.
                   </p>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNombreCrearInicial("");
+                      setIsCrearModalOpen(true);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-primary text-primary-foreground font-black text-xs uppercase tracking-wider rounded-sm hover:bg-primary/95 transition-all cursor-pointer shadow-sm"
+                  >
+                    <FaPlus className="h-3.5 w-3.5" />
+                    Crear nuevo equipo de {torneo.deporte}
+                  </button>
                 </div>
               ) : (
                 <TeamSelect
@@ -401,6 +442,11 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
                   }}
                   placeholder="Selecciona el equipo a registrar..."
                   icon={<FaUsers className="h-4 w-4 text-white/50" />}
+                  torneoDeporte={torneo.deporte}
+                  onOpenCrearModal={(nombreInicial) => {
+                    setNombreCrearInicial(nombreInicial);
+                    setIsCrearModalOpen(true);
+                  }}
                 />
               )}
             </div>
@@ -431,6 +477,15 @@ export function InscribirEquipoClient({ torneo }: InscribirEquipoClientProps) {
           </form>
         </CardContent>
       </Card>
+
+      {/* Modal de Creación Rápida de Equipo */}
+      <CrearEquipoRapidoModal
+        open={isCrearModalOpen}
+        onOpenChange={setIsCrearModalOpen}
+        nombreInicial={nombreCrearInicial}
+        deporteSugerido={torneo.deporte}
+        onCreado={handleEquipoCreado}
+      />
     </div>
   );
 }

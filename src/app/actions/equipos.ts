@@ -42,7 +42,8 @@ export async function createEquipo(formData: FormData) {
       };
     }
 
-    return { success: true };
+    const data = await response.json().catch(() => null);
+    return { success: true, data };
   } catch (error) {
     console.error("Error al crear equipo:", error);
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
