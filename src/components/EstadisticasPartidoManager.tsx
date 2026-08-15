@@ -10,7 +10,6 @@ import {
   FaTrash,
   FaMinus,
   FaSpinner,
-  FaUsers,
   FaUser,
 } from "react-icons/fa";
 import {
@@ -50,9 +49,14 @@ function getGradientBg(name: string): string {
   return colors[hash % colors.length];
 }
 
-// Clave única para identificar una acción en progreso por jugador+tipo
-// (en vez de stat.id, ya que ahora no hay un único id por agrupación)
 type ActionKey = string; // `${jugadorId}-${tipoId}-minus` | `${jugadorId}-${tipoId}-delete`
+
+interface ColumnDefinition {
+  key: string;
+  label: string;
+  tipoId?: number;
+  isPoints?: boolean;
+}
 
 export function EstadisticasPartidoManager({
   partido,
@@ -73,23 +77,31 @@ export function EstadisticasPartidoManager({
     (p: any) => Number(p.equipo?.id || p.equipoId) === visitanteEquipoId
   );
 
-  // ── Formulario de captura rápida ──
+  // ── 1. Formulario de captura rápida (Orden: Equipo -> Estadística -> Jugador -> Aplicar) ──
   const [selectedTeam, setSelectedTeam] = useState<"local" | "visitante">("local");
-  const [selectedJugadorId, setSelectedJugadorId] = useState<string>("");
   const [selectedTipoId, setSelectedTipoId] = useState<string>("");
+  const [selectedJugadorId, setSelectedJugadorId] = useState<string>("");
   const [applying, setApplying] = useState<boolean>(false);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [statsSuccess, setStatsSuccess] = useState<string | null>(null);
 
-  // ── Acciones en tabla: clave = `${jugadorId}-${tipoId}-minus|delete` ──
+  // ── Acciones en tabla ──
   const [actionInProgress, setActionInProgress] = useState<ActionKey | null>(null);
 
   const activePlanillas = selectedTeam === "local" ? localPlanillas : visitantePlanillas;
   const activeEquipoId = selectedTeam === "local" ? localEquipoId : visitanteEquipoId;
 
-  // Reset jugador al cambiar equipo
+  // Al cambiar equipo: resetea jugador (y limpia mensajes)
   const handleTeamChange = (team: "local" | "visitante") => {
     setSelectedTeam(team);
+    setSelectedJugadorId("");
+    setStatsError(null);
+    setStatsSuccess(null);
+  };
+
+  // Al cambiar estadística: resetea jugador
+  const handleTipoChange = (tipoId: string) => {
+    setSelectedTipoId(tipoId);
     setSelectedJugadorId("");
     setStatsError(null);
     setStatsSuccess(null);
@@ -100,7 +112,7 @@ export function EstadisticasPartidoManager({
     onStatsUpdated(updated || []);
   };
 
-  // ── Aplicar +1 (siempre cantidad=1, el backend crea una fila nueva) ──
+  // ── Aplicar (+1) ──
   const handleApplyPlus1 = async () => {
     const jugadorId = parseInt(selectedJugadorId, 10);
     const tipoId = parseInt(selectedTipoId, 10);
@@ -116,7 +128,7 @@ export function EstadisticasPartidoManager({
         partidoId: Number(partido.id),
         equipoId: activeEquipoId,
         tipoEstadisticaId: tipoId,
-        cantidad: 1, // siempre 1; el backend crea un evento nuevo
+        cantidad: 1,
       });
 
       if (res.error) {
@@ -133,8 +145,8 @@ export function EstadisticasPartidoManager({
           tiposEstadistica.find((t) => Number(t.id) === tipoId)?.nombre || "Estadística";
 
         setStatsSuccess(`+1 ${tipoNombre} registrado para ${jNombre}`);
-        // Limpiar solo el tipo (mantener jugador para anotación rápida)
-        setSelectedTipoId("");
+        // Mantiene Equipo y Estadística; limpia SOLO Jugador para registrar rápido al siguiente
+        setSelectedJugadorId("");
         await refreshStats();
         setTimeout(() => setStatsSuccess(null), 4000);
       }
@@ -145,7 +157,7 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  // ── -1: elimina el último evento de ese tipo para ese jugador ──
+  // ── -1: Elimina último registro del tipo ──
   const handleMinus1 = async (jugadorId: number, tipoId: number) => {
     const key: ActionKey = `${jugadorId}-${tipoId}-minus`;
     setActionInProgress(key);
@@ -169,7 +181,7 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  // ── 🗑 Eliminar TODO: llama a eliminarUltimo N veces en secuencia ──
+  // ── 🗑: Elimina todos los registros de ese tipo en secuencia ──
   const handleDeleteAll = async (jugadorId: number, tipoId: number, cantidad: number) => {
     const tipoNombre =
       tiposEstadistica.find((t) => Number(t.id) === tipoId)?.nombre || "esta estadística";
@@ -204,14 +216,92 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  // ── Lógica tablas de resumen ──
-  const buildTeamSummary = (equipoId: number) => {
+  // ── 2. Definición de Columnas según el Deporte ──
+  const getColumnsForSport = (): ColumnDefinition[] => {
+    const dep = (torneo.deporte || "").toLowerCase().trim();
+
+    const findTipo = (predicate: (nombre: string) => boolean) => {
+      return tiposEstadistica.find((t) => predicate((t.nombre || "").toLowerCase().trim()));
+    };
+
+    if (
+      dep.includes("futbol") ||
+      dep.includes("fútbol") ||
+      dep.includes("soccer") ||
+      dep.includes("microfutbol") ||
+      dep.includes("microfútbol") ||
+      dep.includes("golito")
+    ) {
+      // Fútbol / Microfutbol / Golito: # | Nombre | Goles | Faltas | Tarjeta Amarilla | Tarjeta Roja
+      const golTipo = findTipo((n) => n === "gol" || n.includes("gol"));
+      const faltaTipo = findTipo((n) => n.includes("falta"));
+      const amarillaTipo = findTipo((n) => n.includes("amarill"));
+      const rojaTipo = findTipo((n) => n.includes("roj"));
+
+      return [
+        { key: "goles", label: "Goles", tipoId: golTipo?.id ? Number(golTipo.id) : undefined },
+        { key: "faltas", label: "Faltas", tipoId: faltaTipo?.id ? Number(faltaTipo.id) : undefined },
+        { key: "amarillas", label: "Tarjeta Amarilla", tipoId: amarillaTipo?.id ? Number(amarillaTipo.id) : undefined },
+        { key: "rojas", label: "Tarjeta Roja", tipoId: rojaTipo?.id ? Number(rojaTipo.id) : undefined },
+      ];
+    }
+
+    if (dep.includes("baloncesto") || dep.includes("basket")) {
+      // Baloncesto: # | Nombre | T2 | T3 | TL | Pts
+      const t2Tipo = findTipo((n) => n.includes("campo") || n.includes("t2") || n.includes("doble") || n.includes("2 puntos"));
+      const t3Tipo = findTipo((n) => n.includes("triple") || n.includes("t3") || n.includes("3 puntos"));
+      const tlTipo = findTipo((n) => n.includes("libre") || n.includes("tl") || n.includes("1 punto"));
+
+      return [
+        { key: "t2", label: "T2", tipoId: t2Tipo?.id ? Number(t2Tipo.id) : undefined },
+        { key: "t3", label: "T3", tipoId: t3Tipo?.id ? Number(t3Tipo.id) : undefined },
+        { key: "tl", label: "TL", tipoId: tlTipo?.id ? Number(tlTipo.id) : undefined },
+        { key: "pts", label: "Pts", isPoints: true },
+      ];
+    }
+
+    if (dep.includes("voley") || dep.includes("voleibol") || dep.includes("volleyball")) {
+      // Voleibol: # | Nombre | Remates | Saques | Bloqueos | Pts
+      const remateTipo = findTipo((n) => n.includes("remate"));
+      const saqueTipo = findTipo((n) => n.includes("saque") || n.includes("ace"));
+      const bloqueoTipo = findTipo((n) => n.includes("bloqueo"));
+
+      return [
+        { key: "remates", label: "Remates", tipoId: remateTipo?.id ? Number(remateTipo.id) : undefined },
+        { key: "saques", label: "Saques", tipoId: saqueTipo?.id ? Number(saqueTipo.id) : undefined },
+        { key: "bloqueos", label: "Bloqueos", tipoId: bloqueoTipo?.id ? Number(bloqueoTipo.id) : undefined },
+        { key: "pts", label: "Pts", isPoints: true },
+      ];
+    }
+
+    // Fallback genérico para otros deportes
+    const genericCols: ColumnDefinition[] = tiposEstadistica.map((t) => ({
+      key: `stat-${t.id}`,
+      label: t.nombre,
+      tipoId: Number(t.id),
+    }));
+    genericCols.push({ key: "pts", label: "Pts", isPoints: true });
+    return genericCols;
+  };
+
+  const columns = getColumnsForSport();
+
+  // ── Cruce de datos por equipo ──
+  const buildTeamRows = (equipoId: number) => {
     return matchStats
       .filter((s: any) => Number(s.equipo?.id) === equipoId)
       .map((s: any) => {
         const jId = Number(s.jugador?.id);
+        const planilla = planillas.find(
+          (p: any) =>
+            Number(p.jugador?.id || p.idJugador || p.jugadorId) === jId &&
+            Number(p.equipo?.id || p.equipoId) === equipoId
+        );
+        const numeroCamiseta = planilla?.numeroCamiseta ? `#${planilla.numeroCamiseta}` : "-";
+
         return {
           jugadorId: jId,
+          numeroCamiseta,
           nombre:
             `${s.jugador?.nombre || s.jugador?.nombres || ""} ${s.jugador?.apellidos || ""}`.trim() ||
             `Jugador #${jId}`,
@@ -222,33 +312,11 @@ export function EstadisticasPartidoManager({
       .filter((row) => row.estadisticas.length > 0);
   };
 
-  const getActiveTiposForTeam = (rows: ReturnType<typeof buildTeamSummary>) => {
-    const seen = new Map<number, string>();
-    rows.forEach((row) => {
-      row.estadisticas.forEach((st: any) => {
-        const tipoId = Number(st.tipo?.id ?? st.tipoEstadisticaId ?? st.id_tipo);
-        const tipoNombre =
-          typeof st.tipo === "object"
-            ? st.tipo?.nombre
-            : st.tipo || st.nombre || "Estadística";
-        if (!seen.has(tipoId)) seen.set(tipoId, tipoNombre);
-      });
-    });
-    return Array.from(seen.entries()).map(([id, nombre]) => ({ id, nombre }));
-  };
+  const localRows = buildTeamRows(localEquipoId);
+  const visitanteRows = buildTeamRows(visitanteEquipoId);
 
-  const localRows = buildTeamSummary(localEquipoId);
-  const visitanteRows = buildTeamSummary(visitanteEquipoId);
-  const localTipos = getActiveTiposForTeam(localRows);
-  const visitanteTipos = getActiveTiposForTeam(visitanteRows);
-
-  const getStatForJugadorAndTipo = (
-    rows: ReturnType<typeof buildTeamSummary>,
-    jugadorId: number,
-    tipoId: number
-  ) => {
-    const row = rows.find((r) => r.jugadorId === jugadorId);
-    if (!row) return null;
+  const getStatEntry = (row: any, tipoId?: number) => {
+    if (!tipoId) return null;
     return (
       row.estadisticas.find(
         (st: any) => Number(st.tipo?.id ?? st.tipoEstadisticaId ?? st.id_tipo) === tipoId
@@ -256,173 +324,6 @@ export function EstadisticasPartidoManager({
     );
   };
 
-  // ── Sub-componentes internos ──
-  const TeamHeader = ({
-    tipo,
-    equipo,
-    count,
-  }: {
-    tipo: "local" | "visitante";
-    equipo: any;
-    count: number;
-  }) => (
-    <div className="flex items-center gap-3 p-3 bg-muted/20 border border-border/60 rounded-sm mb-4">
-      {equipo?.foto ? (
-        <img
-          src={getUploadUrl("equipos", equipo.foto)}
-          alt={equipo.nombre}
-          className="h-8 w-8 rounded-full object-cover border border-border/60 shadow-sm shrink-0"
-        />
-      ) : (
-        <div
-          className={cn(
-            "h-8 w-8 rounded-full shrink-0 flex items-center justify-center text-xs font-black text-white bg-gradient-to-br shadow-sm uppercase",
-            getGradientBg(equipo?.nombre || (tipo === "local" ? "L" : "V"))
-          )}
-        >
-          {getInitials(equipo?.nombre || (tipo === "local" ? "Lo" : "Vi"))}
-        </div>
-      )}
-      <div className="min-w-0 flex-1">
-        <span
-          className={cn(
-            "text-[10px] font-bold uppercase tracking-widest block",
-            tipo === "local" ? "text-sky-400" : "text-primary"
-          )}
-        >
-          Equipo {tipo === "local" ? "Local" : "Visitante"}
-        </span>
-        <h4 className="text-xs font-black uppercase tracking-tight text-foreground truncate">
-          {equipo?.nombre || (tipo === "local" ? "Local" : "Visitante")}
-        </h4>
-      </div>
-      <span className="text-[10px] font-bold text-muted-foreground bg-card border border-border/60 px-2 py-0.5 rounded-sm">
-        {count} {count === 1 ? "con estadísticas" : "con estadísticas"}
-      </span>
-    </div>
-  );
-
-  const TeamStatsTable = ({
-    rows,
-    tipos,
-  }: {
-    rows: ReturnType<typeof buildTeamSummary>;
-    tipos: { id: number; nombre: string }[];
-  }) => {
-    if (rows.length === 0) {
-      return (
-        <div className="p-6 text-center text-xs text-muted-foreground italic border border-dashed border-border/60 rounded-sm bg-muted/5">
-          Aún no hay estadísticas registradas para este equipo en este partido.
-        </div>
-      );
-    }
-
-    return (
-      <div className="overflow-x-auto rounded-sm border border-border/60">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="border-b border-border/60 bg-muted/10 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
-              <th className="text-left px-3 py-2.5">Jugador</th>
-              {tipos.map((t) => (
-                <th key={t.id} className="text-center px-3 py-2.5 whitespace-nowrap">
-                  {t.nombre}
-                </th>
-              ))}
-              <th className="text-center px-3 py-2.5">Pts</th>
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row) => (
-              <tr
-                key={row.jugadorId}
-                className="border-b border-border/40 hover:bg-muted/10 transition-colors last:border-b-0"
-              >
-                {/* Jugador */}
-                <td className="px-3 py-2.5">
-                  <div className="flex items-center gap-2 min-w-0">
-                    <div
-                      className={cn(
-                        "h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-black text-white bg-gradient-to-br shadow-sm uppercase",
-                        getGradientBg(row.nombre)
-                      )}
-                    >
-                      {getInitials(row.nombre)}
-                    </div>
-                    <span className="font-bold uppercase text-foreground truncate max-w-[120px]">
-                      {row.nombre}
-                    </span>
-                  </div>
-                </td>
-
-                {/* Celdas por tipo */}
-                {tipos.map((t) => {
-                  const stat = getStatForJugadorAndTipo(rows, row.jugadorId, t.id);
-                  const minusKey: ActionKey = `${row.jugadorId}-${t.id}-minus`;
-                  const deleteKey: ActionKey = `${row.jugadorId}-${t.id}-delete`;
-                  const isMinusWorking = actionInProgress === minusKey;
-                  const isDeleteWorking = actionInProgress === deleteKey;
-                  const isWorking = isMinusWorking || isDeleteWorking;
-
-                  return (
-                    <td key={t.id} className="px-3 py-2.5 text-center">
-                      {stat ? (
-                        <div className="flex items-center justify-center gap-1.5">
-                          <span className="font-black text-primary font-mono text-sm min-w-[1.5rem]">
-                            {stat.cantidad}
-                          </span>
-                          <div className="flex flex-col gap-0.5">
-                            {/* Botón -1: llama al endpoint "eliminar último" */}
-                            <button
-                              type="button"
-                              disabled={isWorking}
-                              onClick={() => handleMinus1(row.jugadorId, t.id)}
-                              title="Deshacer último registro (+1→0 lo elimina)"
-                              className="h-4 w-6 flex items-center justify-center rounded-[2px] bg-amber-500/15 text-amber-500 hover:bg-amber-500/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[9px] font-black"
-                            >
-                              {isMinusWorking ? (
-                                <FaSpinner className="h-2 w-2 animate-spin" />
-                              ) : (
-                                <FaMinus className="h-2 w-2" />
-                              )}
-                            </button>
-                            {/* Botón 🗑: elimina todos los registros del tipo en loop */}
-                            <button
-                              type="button"
-                              disabled={isWorking}
-                              onClick={() => handleDeleteAll(row.jugadorId, t.id, stat.cantidad)}
-                              title={`Eliminar todos (${stat.cantidad}) los registros de este tipo`}
-                              className="h-4 w-6 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[9px]"
-                            >
-                              {isDeleteWorking ? (
-                                <FaSpinner className="h-2 w-2 animate-spin" />
-                              ) : (
-                                <FaTrash className="h-2 w-2" />
-                              )}
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground/40 font-mono">—</span>
-                      )}
-                    </td>
-                  );
-                })}
-
-                {/* Total Puntos */}
-                <td className="px-3 py-2.5 text-center">
-                  <span className="font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-sm text-[11px] font-mono">
-                    {row.totalPuntos}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    );
-  };
-
-  // ── Loading state ──
   if (loadingStats) {
     return (
       <Card className="border border-border/60 shadow-md">
@@ -444,7 +345,7 @@ export function EstadisticasPartidoManager({
               Estadísticas por Jugador
             </CardTitle>
             <CardDescription className="text-xs">
-              Planilla de anotador en vivo — cada clic registra un evento individual.
+              Planilla de anotador en vivo — selecciona equipo, estadística y jugador para registrar eventos.
             </CardDescription>
           </div>
           {tiposEstadistica.length > 0 && (
@@ -464,7 +365,7 @@ export function EstadisticasPartidoManager({
           </div>
         ) : (
           <>
-            {/* ── Alertas ── */}
+            {/* ── Alertas de feedback ── */}
             {statsError && (
               <div className="p-3 bg-destructive/10 border border-destructive/25 text-destructive rounded-sm text-xs font-bold flex items-center justify-between">
                 <span>{statsError}</span>
@@ -493,7 +394,7 @@ export function EstadisticasPartidoManager({
               </div>
             )}
 
-            {/* ── Formulario de captura rápida ── */}
+            {/* ── Formulario de captura rápida en 4 pasos (Orden: Equipo -> Estadística -> Jugador -> Botón) ── */}
             <div className="border border-border/60 rounded-sm bg-muted/5 overflow-hidden">
               <div className="border-b border-border/40 bg-muted/20 px-4 py-3">
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
@@ -503,7 +404,7 @@ export function EstadisticasPartidoManager({
               </div>
 
               <div className="p-4 space-y-4">
-                {/* A. Equipo */}
+                {/* Paso A: Selector de Equipo */}
                 <div className="space-y-1.5">
                   <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                     A. Equipo
@@ -571,13 +472,34 @@ export function EstadisticasPartidoManager({
                   </div>
                 </div>
 
-                {/* B + C + D en fila */}
+                {/* Pasos B + C + D: Estadística -> Jugador -> Aplicar (+1) */}
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
-                  {/* B. Jugador */}
+                  {/* Paso B: Estadística (ahora segundo) */}
+                  <div className="space-y-1.5">
+                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <FaChartBar className="h-2.5 w-2.5" />
+                      B. Estadística
+                    </p>
+                    <select
+                      value={selectedTipoId}
+                      onChange={(e) => handleTipoChange(e.target.value)}
+                      className="h-10 w-full bg-card border border-border/60 rounded-sm px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
+                    >
+                      <option value="">— Tipo de estadística —</option>
+                      {tiposEstadistica.map((t: any) => (
+                        <option key={t.id} value={t.id}>
+                          {t.nombre}
+                          {t.puntos ? ` (${t.puntos > 0 ? `+${t.puntos}` : t.puntos} pts)` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  {/* Paso C: Jugador (ahora tercero, filtrado por equipo activo) */}
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                       <FaUser className="h-2.5 w-2.5" />
-                      B. Jugador
+                      C. Jugador
                     </p>
                     {activePlanillas.length === 0 ? (
                       <div className="h-10 flex items-center px-3 border border-dashed border-border/60 rounded-sm text-xs text-muted-foreground italic">
@@ -610,31 +532,7 @@ export function EstadisticasPartidoManager({
                     )}
                   </div>
 
-                  {/* C. Estadística */}
-                  <div className="space-y-1.5">
-                    <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
-                      <FaChartBar className="h-2.5 w-2.5" />
-                      C. Estadística
-                    </p>
-                    <select
-                      value={selectedTipoId}
-                      onChange={(e) => {
-                        setSelectedTipoId(e.target.value);
-                        setStatsError(null);
-                      }}
-                      className="h-10 w-full bg-card border border-border/60 rounded-sm px-3 text-xs font-semibold text-foreground focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all"
-                    >
-                      <option value="">— Tipo de estadística —</option>
-                      {tiposEstadistica.map((t: any) => (
-                        <option key={t.id} value={t.id}>
-                          {t.nombre}
-                          {t.puntos ? ` (${t.puntos > 0 ? `+${t.puntos}` : t.puntos} pts)` : ""}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  {/* D. Botón +1 Aplicar */}
+                  {/* Paso D: Botón Aplicar (+1) */}
                   <Button
                     type="button"
                     disabled={applying || !selectedJugadorId || !selectedTipoId}
@@ -652,34 +550,311 @@ export function EstadisticasPartidoManager({
               </div>
             </div>
 
-            {/* ── Tablas de resumen ── */}
-            <div className="space-y-6">
-              {/* Local */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <FaUsers className="h-3.5 w-3.5 text-sky-400" />
-                  <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Resumen — {partido.equipoLocal?.nombre || "Equipo Local"}
-                  </h3>
-                </div>
-                <TeamHeader tipo="local" equipo={partido.equipoLocal} count={localRows.length} />
-                <TeamStatsTable rows={localRows} tipos={localTipos} />
+            {/* ── 3. Tabla ÚNICA de Resumen con columnas fijas según deporte ── */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground flex items-center gap-2">
+                  <FaChartBar className="text-primary h-3.5 w-3.5" />
+                  Resumen Oficial de Estadísticas del Partido
+                </h3>
+                <span className="text-[10px] uppercase font-bold text-muted-foreground">
+                  Deporte: <strong className="text-foreground">{torneo.deporte}</strong>
+                </span>
               </div>
 
-              {/* Visitante */}
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <FaUsers className="h-3.5 w-3.5 text-primary" />
-                  <h3 className="text-xs font-black uppercase tracking-widest text-muted-foreground">
-                    Resumen — {partido.equipoVisitante?.nombre || "Equipo Visitante"}
-                  </h3>
-                </div>
-                <TeamHeader
-                  tipo="visitante"
-                  equipo={partido.equipoVisitante}
-                  count={visitanteRows.length}
-                />
-                <TeamStatsTable rows={visitanteRows} tipos={visitanteTipos} />
+              <div className="overflow-x-auto rounded-sm border border-border/60 bg-card">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border/60 bg-muted/15 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                      <th className="text-center px-3 py-3 w-12">#</th>
+                      <th className="text-left px-3 py-3 min-w-[140px]">Nombre</th>
+                      {columns.map((col) => (
+                        <th key={col.key} className="text-center px-3 py-3 whitespace-nowrap">
+                          {col.label}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {/* ── Subtítulo Equipo Local ── */}
+                    <tr className="bg-sky-500/10 border-y border-sky-500/30">
+                      <td colSpan={2 + columns.length} className="px-4 py-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {partido.equipoLocal?.foto ? (
+                              <img
+                                src={getUploadUrl("equipos", partido.equipoLocal.foto)}
+                                alt={partido.equipoLocal.nombre}
+                                className="h-5 w-5 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div
+                                className={cn(
+                                  "h-5 w-5 rounded-full shrink-0 flex items-center justify-center text-[8px] font-black text-white bg-gradient-to-br",
+                                  getGradientBg(partido.equipoLocal?.nombre || "L")
+                                )}
+                              >
+                                {getInitials(partido.equipoLocal?.nombre || "Lo")}
+                              </div>
+                            )}
+                            <span className="font-black uppercase tracking-wider text-sky-400 text-xs">
+                              [ Local ] {partido.equipoLocal?.nombre || "Equipo Local"}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-sky-400/80 bg-sky-500/10 border border-sky-500/20 px-2 py-0.5 rounded-sm">
+                            {localRows.length} {localRows.length === 1 ? "jugador registrado" : "jugadores registrados"}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {localRows.length === 0 ? (
+                      <tr className="border-b border-border/30">
+                        <td
+                          colSpan={2 + columns.length}
+                          className="px-4 py-4 text-center text-xs text-muted-foreground italic bg-muted/5"
+                        >
+                          Aún no hay estadísticas registradas para el equipo local en este encuentro.
+                        </td>
+                      </tr>
+                    ) : (
+                      localRows.map((row) => (
+                        <tr
+                          key={row.jugadorId}
+                          className="border-b border-border/40 hover:bg-muted/10 transition-colors"
+                        >
+                          {/* # Camiseta */}
+                          <td className="px-3 py-2.5 text-center font-mono font-bold text-primary text-xs">
+                            {row.numeroCamiseta}
+                          </td>
+
+                          {/* Nombre Jugador */}
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className={cn(
+                                  "h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-black text-white bg-gradient-to-br shadow-sm uppercase",
+                                  getGradientBg(row.nombre)
+                                )}
+                              >
+                                {getInitials(row.nombre)}
+                              </div>
+                              <span className="font-bold uppercase text-foreground truncate max-w-[160px]">
+                                {row.nombre}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Columnas dinámicas según el deporte */}
+                          {columns.map((col) => {
+                            if (col.isPoints) {
+                              return (
+                                <td key={col.key} className="px-3 py-2.5 text-center">
+                                  <span className="font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-sm text-[11px] font-mono">
+                                    {row.totalPuntos}
+                                  </span>
+                                </td>
+                              );
+                            }
+
+                            const stat = getStatEntry(row, col.tipoId);
+                            const hasValue = stat && stat.cantidad > 0;
+                            const minusKey: ActionKey = `${row.jugadorId}-${col.tipoId}-minus`;
+                            const deleteKey: ActionKey = `${row.jugadorId}-${col.tipoId}-delete`;
+                            const isMinusWorking = actionInProgress === minusKey;
+                            const isDeleteWorking = actionInProgress === deleteKey;
+                            const isWorking = isMinusWorking || isDeleteWorking;
+
+                            return (
+                              <td key={col.key} className="px-3 py-2.5 text-center">
+                                {hasValue && col.tipoId ? (
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <span className="font-black text-foreground font-mono text-sm min-w-[1.2rem]">
+                                      {stat.cantidad}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      {/* -1 */}
+                                      <button
+                                        type="button"
+                                        disabled={isWorking}
+                                        onClick={() => handleMinus1(row.jugadorId, col.tipoId!)}
+                                        title="Deshacer 1 (-1)"
+                                        className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-amber-500/15 text-amber-500 hover:bg-amber-500/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isMinusWorking ? (
+                                          <FaSpinner className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <FaMinus className="h-2.5 w-2.5" />
+                                        )}
+                                      </button>
+                                      {/* 🗑 Eliminar todo */}
+                                      <button
+                                        type="button"
+                                        disabled={isWorking}
+                                        onClick={() =>
+                                          handleDeleteAll(row.jugadorId, col.tipoId!, stat.cantidad)
+                                        }
+                                        title={`Eliminar todo (${stat.cantidad})`}
+                                        className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isDeleteWorking ? (
+                                          <FaSpinner className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <FaTrash className="h-2.5 w-2.5" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground/40 font-mono">-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    )}
+
+                    {/* ── Subtítulo Equipo Visitante ── */}
+                    <tr className="bg-primary/10 border-y border-primary/30">
+                      <td colSpan={2 + columns.length} className="px-4 py-2.5">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {partido.equipoVisitante?.foto ? (
+                              <img
+                                src={getUploadUrl("equipos", partido.equipoVisitante.foto)}
+                                alt={partido.equipoVisitante.nombre}
+                                className="h-5 w-5 rounded-full object-cover shrink-0"
+                              />
+                            ) : (
+                              <div
+                                className={cn(
+                                  "h-5 w-5 rounded-full shrink-0 flex items-center justify-center text-[8px] font-black text-white bg-gradient-to-br",
+                                  getGradientBg(partido.equipoVisitante?.nombre || "V")
+                                )}
+                              >
+                                {getInitials(partido.equipoVisitante?.nombre || "Vi")}
+                              </div>
+                            )}
+                            <span className="font-black uppercase tracking-wider text-primary text-xs">
+                              [ Visitante ] {partido.equipoVisitante?.nombre || "Equipo Visitante"}
+                            </span>
+                          </div>
+                          <span className="text-[10px] font-bold text-primary/80 bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-sm">
+                            {visitanteRows.length} {visitanteRows.length === 1 ? "jugador registrado" : "jugadores registrados"}
+                          </span>
+                        </div>
+                      </td>
+                    </tr>
+
+                    {visitanteRows.length === 0 ? (
+                      <tr>
+                        <td
+                          colSpan={2 + columns.length}
+                          className="px-4 py-4 text-center text-xs text-muted-foreground italic bg-muted/5"
+                        >
+                          Aún no hay estadísticas registradas para el equipo visitante en este encuentro.
+                        </td>
+                      </tr>
+                    ) : (
+                      visitanteRows.map((row) => (
+                        <tr
+                          key={row.jugadorId}
+                          className="border-b border-border/40 hover:bg-muted/10 transition-colors last:border-b-0"
+                        >
+                          {/* # Camiseta */}
+                          <td className="px-3 py-2.5 text-center font-mono font-bold text-primary text-xs">
+                            {row.numeroCamiseta}
+                          </td>
+
+                          {/* Nombre Jugador */}
+                          <td className="px-3 py-2.5">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <div
+                                className={cn(
+                                  "h-6 w-6 rounded-full shrink-0 flex items-center justify-center text-[9px] font-black text-white bg-gradient-to-br shadow-sm uppercase",
+                                  getGradientBg(row.nombre)
+                                )}
+                              >
+                                {getInitials(row.nombre)}
+                              </div>
+                              <span className="font-bold uppercase text-foreground truncate max-w-[160px]">
+                                {row.nombre}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Columnas dinámicas según el deporte */}
+                          {columns.map((col) => {
+                            if (col.isPoints) {
+                              return (
+                                <td key={col.key} className="px-3 py-2.5 text-center">
+                                  <span className="font-black text-primary bg-primary/10 border border-primary/20 px-2 py-0.5 rounded-sm text-[11px] font-mono">
+                                    {row.totalPuntos}
+                                  </span>
+                                </td>
+                              );
+                            }
+
+                            const stat = getStatEntry(row, col.tipoId);
+                            const hasValue = stat && stat.cantidad > 0;
+                            const minusKey: ActionKey = `${row.jugadorId}-${col.tipoId}-minus`;
+                            const deleteKey: ActionKey = `${row.jugadorId}-${col.tipoId}-delete`;
+                            const isMinusWorking = actionInProgress === minusKey;
+                            const isDeleteWorking = actionInProgress === deleteKey;
+                            const isWorking = isMinusWorking || isDeleteWorking;
+
+                            return (
+                              <td key={col.key} className="px-3 py-2.5 text-center">
+                                {hasValue && col.tipoId ? (
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <span className="font-black text-foreground font-mono text-sm min-w-[1.2rem]">
+                                      {stat.cantidad}
+                                    </span>
+                                    <div className="flex items-center gap-1">
+                                      {/* -1 */}
+                                      <button
+                                        type="button"
+                                        disabled={isWorking}
+                                        onClick={() => handleMinus1(row.jugadorId, col.tipoId!)}
+                                        title="Deshacer 1 (-1)"
+                                        className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-amber-500/15 text-amber-500 hover:bg-amber-500/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isMinusWorking ? (
+                                          <FaSpinner className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <FaMinus className="h-2.5 w-2.5" />
+                                        )}
+                                      </button>
+                                      {/* 🗑 Eliminar todo */}
+                                      <button
+                                        type="button"
+                                        disabled={isWorking}
+                                        onClick={() =>
+                                          handleDeleteAll(row.jugadorId, col.tipoId!, stat.cantidad)
+                                        }
+                                        title={`Eliminar todo (${stat.cantidad})`}
+                                        className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                                      >
+                                        {isDeleteWorking ? (
+                                          <FaSpinner className="h-2.5 w-2.5 animate-spin" />
+                                        ) : (
+                                          <FaTrash className="h-2.5 w-2.5" />
+                                        )}
+                                      </button>
+                                    </div>
+                                  </div>
+                                ) : (
+                                  <span className="text-muted-foreground/40 font-mono">-</span>
+                                )}
+                              </td>
+                            );
+                          })}
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </>
