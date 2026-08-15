@@ -20,10 +20,12 @@ import {
   FaTrash,
   FaIdCard,
   FaClipboardList,
+  FaUserPlus,
 } from "react-icons/fa";
 import Link from "next/link";
 import { getJugadores } from "@/app/actions/jugadores";
 import { getPlanillasPorTorneo, createPlanilla, deletePlanilla } from "@/app/actions/planillas";
+import { CrearJugadorRapidoModal } from "@/components/CrearJugadorRapidoModal";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
 
@@ -35,6 +37,8 @@ interface PlayerSelectProps {
   disabled?: boolean;
   disabledPlaceholder?: string;
   icon?: React.ReactNode;
+  onSearchChange?: (term: string) => void;
+  onCrearRapido?: (term: string) => void;
 }
 
 function PlayerSelect({
@@ -45,6 +49,8 @@ function PlayerSelect({
   disabled = false,
   disabledPlaceholder = "Selecciona un jugador",
   icon,
+  onSearchChange,
+  onCrearRapido,
 }: PlayerSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [search, setSearch] = useState("");
@@ -132,9 +138,13 @@ function PlayerSelect({
           <div className="p-2 border-b border-border/45 bg-muted/20">
             <input
               type="text"
-              placeholder="Buscar deportista..."
+              placeholder="Buscar deportista por nombre o ID..."
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                const val = e.target.value;
+                setSearch(val);
+                if (onSearchChange) onSearchChange(val);
+              }}
               className="w-full bg-card h-9 border border-border/60 rounded-sm text-xs px-3 focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary transition-all font-semibold"
               autoFocus
             />
@@ -142,8 +152,25 @@ function PlayerSelect({
 
           <div className="max-h-60 overflow-y-auto scrollbar-thin py-1">
             {filteredPlayers.length === 0 ? (
-              <div className="p-4 text-center text-xs text-muted-foreground font-semibold">
-                No se encontraron deportistas
+              <div className="p-4 text-center space-y-2.5">
+                <p className="text-xs text-muted-foreground font-semibold">
+                  No se encontraron deportistas
+                </p>
+                {onCrearRapido && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setIsOpen(false);
+                      onCrearRapido(search);
+                    }}
+                    className="text-xs font-bold gap-1.5 h-8 border-primary text-primary hover:bg-primary/10 mx-auto"
+                  >
+                    <FaUserPlus className="h-3 w-3" />
+                    Crear &ldquo;{search || "deportista"}&rdquo;
+                  </Button>
+                )}
               </div>
             ) : (
               filteredPlayers.map((p) => {
@@ -156,6 +183,7 @@ function PlayerSelect({
                       onChange(p.id.toString());
                       setIsOpen(false);
                       setSearch("");
+                      if (onSearchChange) onSearchChange("");
                     }}
                     className={cn(
                       "flex items-center justify-between w-full p-3 text-left transition-all border-b border-border/10 last:border-b-0 hover:bg-muted/45",
@@ -210,7 +238,17 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
   const [allPlanillasTorneo, setAllPlanillasTorneo] = useState<any[]>([]);
   const [loadingPlanilla, setLoadingPlanilla] = useState<boolean>(true);
 
+  // Estado para el modal de creación rápida
+  const [modalCrearOpen, setModalCrearOpen] = useState<boolean>(false);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+
   const router = useRouter();
+
+  const handleJugadorCreado = (nuevoJugador: any) => {
+    setAllJugadores((prev) => [nuevoJugador, ...prev]);
+    setSelectedPlayerId(nuevoJugador.id.toString());
+    setError(null);
+  };
 
   const [prevIds, setPrevIds] = useState({ torneoId: torneo.id, equipoId: equipo.id });
   if (torneo.id !== prevIds.torneoId || equipo.id !== prevIds.equipoId) {
@@ -421,67 +459,108 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
         </Card>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
-        {/* Formulario de Inscripción */}
-        <Card className="border-y border-r border-border/60 border-l-4 border-l-primary/70 rounded-sm shadow-md overflow-visible lg:col-span-1">
+      <div className="space-y-8">
+        {/* Formulario de Inscripción - Ancho Completo */}
+        <Card className="w-full border-y border-r border-border/60 border-l-4 border-l-primary/70 rounded-sm shadow-md overflow-visible">
           <CardHeader className="border-b border-border/60 bg-muted/15 p-5">
             <CardTitle className="text-base font-black uppercase tracking-tight flex items-center gap-2">
               <FaClipboardList className="text-primary h-5 w-5" />
               Inscribir Deportista
             </CardTitle>
             <CardDescription className="text-xs">
-              Agrega un deportista a la nómina oficial del equipo.
+              Busca un deportista existente o regístralo rápidamente para agregarlo a la nómina oficial del equipo.
             </CardDescription>
           </CardHeader>
-          <CardContent className="p-5">
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {/* Seleccionar Jugador */}
-              <div className="space-y-2">
-                <Label className="font-bold text-xs flex items-center gap-1.5 mb-1">
-                  <FaUser className="text-muted-foreground h-3.5 w-3.5" />
-                  Jugador / Deportista
-                </Label>
-                {loadingJugadores || loadingPlanilla ? (
-                  <div className="w-full bg-[oklch(0.25_0.04_255)] h-14 border border-white/10 rounded-sm px-4 flex items-center text-white/60 text-xs font-semibold animate-pulse">
-                    Cargando deportistas...
+          <CardContent className="p-6">
+            <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                {/* Seleccionar Jugador */}
+                <div className="space-y-2 md:col-span-6 lg:col-span-7">
+                  <div className="flex items-center justify-between">
+                    <Label className="font-bold text-xs flex items-center gap-1.5">
+                      <FaUser className="text-muted-foreground h-3.5 w-3.5" />
+                      Jugador / Deportista
+                    </Label>
+                    <button
+                      type="button"
+                      onClick={() => setModalCrearOpen(true)}
+                      className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:text-primary/80 transition-colors cursor-pointer"
+                    >
+                      <FaUserPlus className="h-3 w-3" />
+                      ¿No encuentras al deportista? Créalo aquí
+                    </button>
                   </div>
-                ) : jugadoresDisponibles.length === 0 ? (
-                  <div className="p-4 bg-amber-500/10 border border-amber-500/20 rounded-sm text-amber-500 text-xs font-semibold">
-                    <p>No hay deportistas disponibles para inscribir.</p>
-                  </div>
-                ) : (
-                  <PlayerSelect
-                    players={jugadoresDisponibles}
-                    selectedValue={selectedPlayerId}
-                    onChange={(val) => {
-                      setSelectedPlayerId(val);
+                  {loadingJugadores || loadingPlanilla ? (
+                    <div className="w-full bg-[oklch(0.25_0.04_255)] h-14 border border-white/10 rounded-sm px-4 flex items-center text-white/60 text-xs font-semibold animate-pulse">
+                      Cargando deportistas...
+                    </div>
+                  ) : jugadoresDisponibles.length === 0 ? (
+                    <div className="p-3.5 bg-amber-500/10 border border-amber-500/20 rounded-sm text-amber-500 text-xs font-semibold flex items-center justify-between gap-3">
+                      <p>No hay deportistas disponibles para inscribir.</p>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setModalCrearOpen(true)}
+                        className="text-xs font-bold gap-1.5 h-8 border-amber-500/40 text-amber-500 hover:bg-amber-500/10 shrink-0"
+                      >
+                        <FaUserPlus className="h-3 w-3" /> Crear Deportista
+                      </Button>
+                    </div>
+                  ) : (
+                    <PlayerSelect
+                      players={jugadoresDisponibles}
+                      selectedValue={selectedPlayerId}
+                      onChange={(val) => {
+                        setSelectedPlayerId(val);
+                        setError(null);
+                      }}
+                      onSearchChange={(term) => setSearchQuery(term)}
+                      onCrearRapido={(term) => {
+                        setSearchQuery(term);
+                        setModalCrearOpen(true);
+                      }}
+                      placeholder="Buscar deportista por nombre o identificación..."
+                      icon={<FaUser className="h-4 w-4 text-white/50" />}
+                    />
+                  )}
+                </div>
+
+                {/* Número de Camiseta */}
+                <div className="space-y-2 md:col-span-3 lg:col-span-2">
+                  <Label className="font-bold text-xs flex items-center gap-1.5" htmlFor="camiseta">
+                    <span className="font-black text-muted-foreground text-sm">#</span>
+                    Camiseta
+                  </Label>
+                  <Input
+                    id="camiseta"
+                    type="number"
+                    min="0"
+                    max="999"
+                    placeholder="Ej: 10"
+                    value={camiseta}
+                    onChange={(e) => {
+                      setCamiseta(e.target.value);
                       setError(null);
                     }}
-                    placeholder="Buscar deportista..."
-                    icon={<FaUser className="h-4 w-4 text-white/50" />}
+                    className="bg-card h-14 border border-border/60 rounded-sm px-4 text-sm font-bold focus-visible:ring-primary/20 font-mono text-center"
                   />
-                )}
-              </div>
+                </div>
 
-              {/* Número de Camiseta */}
-              <div className="space-y-2">
-                <Label className="font-bold text-xs flex items-center gap-1.5 mb-1" htmlFor="camiseta">
-                  <span className="font-black text-muted-foreground text-sm">#</span>
-                  Número de Camiseta
-                </Label>
-                <Input
-                  id="camiseta"
-                  type="number"
-                  min="0"
-                  max="999"
-                  placeholder="Ej: 10"
-                  value={camiseta}
-                  onChange={(e) => {
-                    setCamiseta(e.target.value);
-                    setError(null);
-                  }}
-                  className="bg-card h-12 border border-border/60 rounded-sm px-4 text-sm font-semibold focus-visible:ring-primary/20"
-                />
+                {/* Botón de Enviar */}
+                <div className="space-y-2 md:col-span-3 lg:col-span-3">
+                  <Label className="hidden md:block font-bold text-xs invisible select-none pointer-events-none">
+                    Acción
+                  </Label>
+                  <Button
+                    type="submit"
+                    disabled={isPending || success || loadingJugadores || loadingPlanilla || jugadoresDisponibles.length === 0}
+                    className="w-full font-black h-14 rounded-sm bg-primary hover:bg-primary/95 text-primary-foreground border-none uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-sm"
+                  >
+                    <FaSave className="h-4 w-4" />
+                    {isPending ? "Inscribiendo..." : "Inscribir a Planilla"}
+                  </Button>
+                </div>
               </div>
 
               {/* Mensajes de Feedback */}
@@ -497,22 +576,12 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
                   ¡Inscripción exitosa!
                 </div>
               )}
-
-              {/* Botón de Enviar */}
-              <Button
-                type="submit"
-                disabled={isPending || success || loadingJugadores || loadingPlanilla || jugadoresDisponibles.length === 0}
-                className="w-full font-bold h-12 rounded-sm bg-primary hover:bg-primary/95 text-primary-foreground border-none uppercase tracking-wider text-xs flex items-center justify-center gap-2"
-              >
-                <FaSave className="h-4 w-4" />
-                {isPending ? "Inscribiendo..." : "Inscribir a Planilla"}
-              </Button>
             </form>
           </CardContent>
         </Card>
 
-        {/* Tabla de Nómina/Roster Actual */}
-        <Card className="border-border/60 shadow-md lg:col-span-2">
+        {/* Tabla de Nómina/Roster Actual - Ancho Completo */}
+        <Card className="w-full border-border/60 shadow-md">
           <CardHeader className="border-b border-border/50 bg-muted/15 flex flex-col sm:flex-row sm:items-center sm:justify-between p-5 gap-4">
             <div>
               <CardTitle className="text-base font-black uppercase tracking-tight flex items-center gap-2">
@@ -572,14 +641,14 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
                             </span>
                           </div>
                         </td>
-                        <td className="px-6 py-3 text-xs text-muted-foreground">
+                        <td className="px-6 py-3 text-xs text-muted-foreground font-mono">
                           {p.jugador?.identificacion || "—"}
                         </td>
                         <td className="px-4 py-3 text-center text-xs text-muted-foreground uppercase">
                           {p.jugador?.genero || "—"}
                         </td>
                         <td className="px-4 py-3 text-center">
-                          <span className="inline-flex items-center justify-center h-7 w-7 rounded-sm bg-primary/10 text-primary font-black text-xs">
+                          <span className="inline-flex items-center justify-center h-7 w-7 rounded-sm bg-primary/10 text-primary font-black text-xs font-mono">
                             {p.numeroCamiseta}
                           </span>
                         </td>
@@ -594,7 +663,7 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
                             size="icon"
                             title="Retirar de la Planilla"
                             onClick={() => handleEliminarPlanilla(p.id)}
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm"
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10 hover:text-destructive rounded-sm cursor-pointer"
                           >
                             <FaTrash className="h-3.5 w-3.5" />
                           </Button>
@@ -608,6 +677,15 @@ export function InscribirPlanillaClient({ torneo, equipo }: InscribirPlanillaCli
           </CardContent>
         </Card>
       </div>
+
+      {/* Modal de Creación Rápida de Jugador */}
+      <CrearJugadorRapidoModal
+        open={modalCrearOpen}
+        onOpenChange={setModalCrearOpen}
+        nombreInicial={searchQuery}
+        onCreado={handleJugadorCreado}
+        generoSugerido={torneo.rama}
+      />
     </div>
   );
 }

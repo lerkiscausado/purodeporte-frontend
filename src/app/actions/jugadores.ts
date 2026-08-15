@@ -56,7 +56,8 @@ export async function createJugador(formData: FormData) {
       };
     }
 
-    return { success: true };
+    const data = await response.json().catch(() => null);
+    return { success: true, data };
   } catch (error) {
     console.error("Error al crear jugador:", error);
     return { error: "Error de conexión con el servidor. Intenta de nuevo." };
