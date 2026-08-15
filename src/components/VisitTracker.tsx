@@ -13,6 +13,9 @@ export function VisitTracker() {
   const pathname = usePathname();
 
   useEffect(() => {
+    if (pathname.startsWith("/dashboard")) {
+      return;
+    }
     // No esperamos la promesa ni manejamos errores aquí;
     // registrarVisita() ya los absorbe internamente.
     registrarVisita(pathname);
