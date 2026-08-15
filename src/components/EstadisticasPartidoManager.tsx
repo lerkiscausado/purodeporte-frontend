@@ -17,6 +17,7 @@ import {
   eliminarUltimoRegistroEstadistica,
   getEstadisticasPorPartido,
 } from "@/app/actions/estadisticas";
+import { ConfirmDeleteStatModal } from "@/components/ConfirmDeleteStatModal";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
 
@@ -84,6 +85,15 @@ export function EstadisticasPartidoManager({
   const [applying, setApplying] = useState<boolean>(false);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [statsSuccess, setStatsSuccess] = useState<string | null>(null);
+
+  // ── Modal de confirmación para eliminar todo ──
+  const [confirmDelete, setConfirmDelete] = useState<{
+    jugadorId: number;
+    tipoId: number;
+    jugadorNombre: string;
+    tipoNombre: string;
+    cantidad: number;
+  } | null>(null);
 
   // ── Acciones en tabla ──
   const [actionInProgress, setActionInProgress] = useState<ActionKey | null>(null);
@@ -181,17 +191,28 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  // ── 🗑: Elimina todos los registros de ese tipo en secuencia ──
-  const handleDeleteAll = async (jugadorId: number, tipoId: number, cantidad: number) => {
+  // ── Abrir modal de confirmación para eliminar todo ──
+  const promptDeleteAll = (
+    jugadorId: number,
+    tipoId: number,
+    jugadorNombre: string,
+    cantidad: number
+  ) => {
     const tipoNombre =
       tiposEstadistica.find((t) => Number(t.id) === tipoId)?.nombre || "esta estadística";
-    if (
-      !confirm(
-        `¿Eliminar todos los ${cantidad} registro(s) de "${tipoNombre}" para este jugador?\nEsta acción no se puede deshacer.`
-      )
-    )
-      return;
+    setConfirmDelete({
+      jugadorId,
+      tipoId,
+      jugadorNombre,
+      tipoNombre,
+      cantidad,
+    });
+  };
 
+  // ── Ejecutar eliminación de todos los registros del tipo ──
+  const executeDeleteAll = async () => {
+    if (!confirmDelete) return;
+    const { jugadorId, tipoId, cantidad } = confirmDelete;
     const key: ActionKey = `${jugadorId}-${tipoId}-delete`;
     setActionInProgress(key);
     setStatsError(null);
@@ -213,6 +234,7 @@ export function EstadisticasPartidoManager({
       setStatsError("Error de conexión al eliminar.");
     } finally {
       setActionInProgress(null);
+      setConfirmDelete(null);
     }
   };
 
@@ -696,7 +718,12 @@ export function EstadisticasPartidoManager({
                                         type="button"
                                         disabled={isWorking}
                                         onClick={() =>
-                                          handleDeleteAll(row.jugadorId, col.tipoId!, stat.cantidad)
+                                          promptDeleteAll(
+                                            row.jugadorId,
+                                            col.tipoId!,
+                                            row.nombre,
+                                            stat.cantidad
+                                          )
                                         }
                                         title={`Eliminar todo (${stat.cantidad})`}
                                         className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -710,7 +737,7 @@ export function EstadisticasPartidoManager({
                                     </div>
                                   </div>
                                 ) : (
-                                  <span className="text-muted-foreground/40 font-mono">-</span>
+                                  <span className="text-muted-foreground/40 font-mono">0</span>
                                 )}
                               </td>
                             );
@@ -835,7 +862,12 @@ export function EstadisticasPartidoManager({
                                         type="button"
                                         disabled={isWorking}
                                         onClick={() =>
-                                          handleDeleteAll(row.jugadorId, col.tipoId!, stat.cantidad)
+                                          promptDeleteAll(
+                                            row.jugadorId,
+                                            col.tipoId!,
+                                            row.nombre,
+                                            stat.cantidad
+                                          )
                                         }
                                         title={`Eliminar todo (${stat.cantidad})`}
                                         className="h-5 w-5 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
@@ -849,7 +881,7 @@ export function EstadisticasPartidoManager({
                                     </div>
                                   </div>
                                 ) : (
-                                  <span className="text-muted-foreground/40 font-mono">-</span>
+                                  <span className="text-muted-foreground/40 font-mono">0</span>
                                 )}
                               </td>
                             );
@@ -861,6 +893,20 @@ export function EstadisticasPartidoManager({
                 </table>
               </div>
             </div>
+
+            {/* ── Modal de confirmación estilizado para eliminar estadísticas ── */}
+            <ConfirmDeleteStatModal
+              open={confirmDelete !== null}
+              onClose={() => setConfirmDelete(null)}
+              onConfirm={executeDeleteAll}
+              jugadorNombre={confirmDelete?.jugadorNombre || ""}
+              tipoNombre={confirmDelete?.tipoNombre || ""}
+              cantidad={confirmDelete?.cantidad || 0}
+              isDeleting={
+                confirmDelete !== null &&
+                actionInProgress === `${confirmDelete.jugadorId}-${confirmDelete.tipoId}-delete`
+              }
+            />
           </>
         )}
       </CardContent>
