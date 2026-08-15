@@ -96,6 +96,45 @@ export async function eliminarEstadistica(id: number) {
   }
 }
 
+export async function eliminarUltimoRegistroEstadistica(
+  jugadorId: number,
+  partidoId: number,
+  tipoEstadisticaId: number
+) {
+  try {
+    const cookieStore = await cookies();
+    const token = cookieStore.get("session_token")?.value;
+
+    if (!token) {
+      return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
+    }
+
+    const response = await fetch(
+      getApiUrl(
+        `estadisticas/ultimo/jugador/${jugadorId}/partido/${partidoId}/tipo/${tipoEstadisticaId}`
+      ),
+      {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      return {
+        error: errorData.message || "Error al eliminar el último registro.",
+      };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Error al eliminar último registro de estadística:", error);
+    return { error: "Error de conexión con el servidor. Intenta de nuevo." };
+  }
+}
+
 export async function getEstadisticasPorPartido(partidoId: number) {
   try {
     const response = await fetch(getApiUrl(`estadisticas/partido/${partidoId}`), {

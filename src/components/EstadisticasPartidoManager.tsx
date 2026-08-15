@@ -15,7 +15,7 @@ import {
 } from "react-icons/fa";
 import {
   registrarEstadistica,
-  eliminarEstadistica,
+  eliminarUltimoRegistroEstadistica,
   getEstadisticasPorPartido,
 } from "@/app/actions/estadisticas";
 import { cn } from "@/lib/utils";
@@ -50,6 +50,10 @@ function getGradientBg(name: string): string {
   return colors[hash % colors.length];
 }
 
+// Clave única para identificar una acción en progreso por jugador+tipo
+// (en vez de stat.id, ya que ahora no hay un único id por agrupación)
+type ActionKey = string; // `${jugadorId}-${tipoId}-minus` | `${jugadorId}-${tipoId}-delete`
+
 export function EstadisticasPartidoManager({
   partido,
   torneo,
@@ -69,18 +73,16 @@ export function EstadisticasPartidoManager({
     (p: any) => Number(p.equipo?.id || p.equipoId) === visitanteEquipoId
   );
 
-  // ── Formulario de anotación ──
+  // ── Formulario de captura rápida ──
   const [selectedTeam, setSelectedTeam] = useState<"local" | "visitante">("local");
   const [selectedJugadorId, setSelectedJugadorId] = useState<string>("");
-  const [selectedTipoId, setSelectedTipoId] = useState<string>(
-    tiposEstadistica[0]?.id?.toString() || ""
-  );
+  const [selectedTipoId, setSelectedTipoId] = useState<string>("");
   const [applying, setApplying] = useState<boolean>(false);
   const [statsError, setStatsError] = useState<string | null>(null);
   const [statsSuccess, setStatsSuccess] = useState<string | null>(null);
 
-  // ── Acciones de tabla (botones -1 y 🗑) ──
-  const [actionInProgress, setActionInProgress] = useState<number | null>(null); // stat.id
+  // ── Acciones en tabla: clave = `${jugadorId}-${tipoId}-minus|delete` ──
+  const [actionInProgress, setActionInProgress] = useState<ActionKey | null>(null);
 
   const activePlanillas = selectedTeam === "local" ? localPlanillas : visitantePlanillas;
   const activeEquipoId = selectedTeam === "local" ? localEquipoId : visitanteEquipoId;
@@ -98,22 +100,10 @@ export function EstadisticasPartidoManager({
     onStatsUpdated(updated || []);
   };
 
-  // Busca el registro actual de ese jugador + tipo en matchStats
-  const getCurrentStatEntry = (jugadorId: number, tipoId: number) => {
-    const statGroup = matchStats.find((s: any) => Number(s.jugador?.id) === jugadorId);
-    if (!statGroup) return null;
-    return (
-      statGroup.estadisticas?.find(
-        (e: any) =>
-          Number(e.tipo?.id ?? e.tipoEstadisticaId ?? e.id_tipo) === tipoId
-      ) || null
-    );
-  };
-
+  // ── Aplicar +1 (siempre cantidad=1, el backend crea una fila nueva) ──
   const handleApplyPlus1 = async () => {
     const jugadorId = parseInt(selectedJugadorId, 10);
     const tipoId = parseInt(selectedTipoId, 10);
-
     if (!jugadorId || !tipoId) return;
 
     setApplying(true);
@@ -121,36 +111,31 @@ export function EstadisticasPartidoManager({
     setStatsSuccess(null);
 
     try {
-      const currentEntry = getCurrentStatEntry(jugadorId, tipoId);
-      const currentQty = currentEntry?.cantidad ?? 0;
-
       const res = await registrarEstadistica({
         jugadorId,
         partidoId: Number(partido.id),
         equipoId: activeEquipoId,
         tipoEstadisticaId: tipoId,
-        cantidad: currentQty + 1,
+        cantidad: 1, // siempre 1; el backend crea un evento nuevo
       });
 
       if (res.error) {
         setStatsError(res.error);
       } else {
-        // Nombre del jugador para el mensaje
         const planilla = activePlanillas.find(
           (p: any) => Number(p.jugador?.id || p.idJugador || p.jugadorId) === jugadorId
         );
-        const jugador = planilla?.jugador || {};
+        const jug = planilla?.jugador || {};
         const jNombre =
-          `${jugador.nombre || jugador.nombres || ""} ${jugador.apellidos || jugador.apellido || ""}`.trim() ||
+          `${jug.nombre || jug.nombres || ""} ${jug.apellidos || jug.apellido || ""}`.trim() ||
           `Jugador #${jugadorId}`;
         const tipoNombre =
           tiposEstadistica.find((t) => Number(t.id) === tipoId)?.nombre || "Estadística";
 
         setStatsSuccess(`+1 ${tipoNombre} registrado para ${jNombre}`);
-        // Limpiar solo el tipo (dejar jugador)
-        setSelectedTipoId(tiposEstadistica[0]?.id?.toString() || "");
+        // Limpiar solo el tipo (mantener jugador para anotación rápida)
+        setSelectedTipoId("");
         await refreshStats();
-
         setTimeout(() => setStatsSuccess(null), 4000);
       }
     } catch {
@@ -160,57 +145,58 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  const handleMinus1 = async (stat: any, jugadorId: number, equipoId: number) => {
-    setActionInProgress(stat.id);
-    setStatsError(null);
-    setStatsSuccess(null);
-
-    try {
-      if (stat.cantidad <= 1) {
-        // Eliminar el registro completo
-        const res = await eliminarEstadistica(stat.id);
-        if (res.error) {
-          setStatsError(res.error);
-        } else {
-          await refreshStats();
-        }
-      } else {
-        // Restar 1
-        const tipoId =
-          Number(stat.tipo?.id ?? stat.tipoEstadisticaId ?? stat.id_tipo);
-        const res = await registrarEstadistica({
-          jugadorId,
-          partidoId: Number(partido.id),
-          equipoId,
-          tipoEstadisticaId: tipoId,
-          cantidad: stat.cantidad - 1,
-        });
-        if (res.error) {
-          setStatsError(res.error);
-        } else {
-          await refreshStats();
-        }
-      }
-    } catch {
-      setStatsError("Error de conexión.");
-    } finally {
-      setActionInProgress(null);
-    }
-  };
-
-  const handleDeleteStat = async (stat: any) => {
-    if (!confirm("¿Deseas eliminar este registro de estadística por completo?")) return;
-
-    setActionInProgress(stat.id);
+  // ── -1: elimina el último evento de ese tipo para ese jugador ──
+  const handleMinus1 = async (jugadorId: number, tipoId: number) => {
+    const key: ActionKey = `${jugadorId}-${tipoId}-minus`;
+    setActionInProgress(key);
     setStatsError(null);
 
     try {
-      const res = await eliminarEstadistica(stat.id);
+      const res = await eliminarUltimoRegistroEstadistica(
+        jugadorId,
+        Number(partido.id),
+        tipoId
+      );
       if (res.error) {
         setStatsError(res.error);
       } else {
         await refreshStats();
       }
+    } catch {
+      setStatsError("Error de conexión al deshacer.");
+    } finally {
+      setActionInProgress(null);
+    }
+  };
+
+  // ── 🗑 Eliminar TODO: llama a eliminarUltimo N veces en secuencia ──
+  const handleDeleteAll = async (jugadorId: number, tipoId: number, cantidad: number) => {
+    const tipoNombre =
+      tiposEstadistica.find((t) => Number(t.id) === tipoId)?.nombre || "esta estadística";
+    if (
+      !confirm(
+        `¿Eliminar todos los ${cantidad} registro(s) de "${tipoNombre}" para este jugador?\nEsta acción no se puede deshacer.`
+      )
+    )
+      return;
+
+    const key: ActionKey = `${jugadorId}-${tipoId}-delete`;
+    setActionInProgress(key);
+    setStatsError(null);
+
+    try {
+      for (let i = 0; i < cantidad; i++) {
+        const res = await eliminarUltimoRegistroEstadistica(
+          jugadorId,
+          Number(partido.id),
+          tipoId
+        );
+        if (res.error) {
+          setStatsError(`Error al eliminar (iteración ${i + 1}): ${res.error}`);
+          break;
+        }
+      }
+      await refreshStats();
     } catch {
       setStatsError("Error de conexión al eliminar.");
     } finally {
@@ -218,9 +204,7 @@ export function EstadisticasPartidoManager({
     }
   };
 
-  // ── Lógica para las tablas de resumen ──
-
-  // Para cada equipo, obtener jugadores con al menos 1 estadística
+  // ── Lógica tablas de resumen ──
   const buildTeamSummary = (equipoId: number) => {
     return matchStats
       .filter((s: any) => Number(s.equipo?.id) === equipoId)
@@ -228,16 +212,16 @@ export function EstadisticasPartidoManager({
         const jId = Number(s.jugador?.id);
         return {
           jugadorId: jId,
-          nombre: `${s.jugador?.nombre || s.jugador?.nombres || ""} ${s.jugador?.apellidos || ""}`.trim() || `Jugador #${jId}`,
+          nombre:
+            `${s.jugador?.nombre || s.jugador?.nombres || ""} ${s.jugador?.apellidos || ""}`.trim() ||
+            `Jugador #${jId}`,
           estadisticas: s.estadisticas || [],
           totalPuntos: s.totalPuntos ?? 0,
-          equipo: s.equipo,
         };
       })
       .filter((row) => row.estadisticas.length > 0);
   };
 
-  // Obtener todas las columnas (tipos distintos) que aparecen en las filas
   const getActiveTiposForTeam = (rows: ReturnType<typeof buildTeamSummary>) => {
     const seen = new Map<number, string>();
     rows.forEach((row) => {
@@ -258,13 +242,12 @@ export function EstadisticasPartidoManager({
   const localTipos = getActiveTiposForTeam(localRows);
   const visitanteTipos = getActiveTiposForTeam(visitanteRows);
 
-  // Para un jugador y tipo, busca el registro en matchStats
   const getStatForJugadorAndTipo = (
-    equipoRows: ReturnType<typeof buildTeamSummary>,
+    rows: ReturnType<typeof buildTeamSummary>,
     jugadorId: number,
     tipoId: number
   ) => {
-    const row = equipoRows.find((r) => r.jugadorId === jugadorId);
+    const row = rows.find((r) => r.jugadorId === jugadorId);
     if (!row) return null;
     return (
       row.estadisticas.find(
@@ -273,6 +256,7 @@ export function EstadisticasPartidoManager({
     );
   };
 
+  // ── Sub-componentes internos ──
   const TeamHeader = ({
     tipo,
     equipo,
@@ -313,7 +297,7 @@ export function EstadisticasPartidoManager({
         </h4>
       </div>
       <span className="text-[10px] font-bold text-muted-foreground bg-card border border-border/60 px-2 py-0.5 rounded-sm">
-        {count} {count === 1 ? "jugador" : "jugadores"}
+        {count} {count === 1 ? "con estadísticas" : "con estadísticas"}
       </span>
     </div>
   );
@@ -321,11 +305,9 @@ export function EstadisticasPartidoManager({
   const TeamStatsTable = ({
     rows,
     tipos,
-    equipoId,
   }: {
     rows: ReturnType<typeof buildTeamSummary>;
     tipos: { id: number; nombre: string }[];
-    equipoId: number;
   }) => {
     if (rows.length === 0) {
       return (
@@ -355,7 +337,7 @@ export function EstadisticasPartidoManager({
                 key={row.jugadorId}
                 className="border-b border-border/40 hover:bg-muted/10 transition-colors last:border-b-0"
               >
-                {/* Nombre jugador */}
+                {/* Jugador */}
                 <td className="px-3 py-2.5">
                   <div className="flex items-center gap-2 min-w-0">
                     <div
@@ -374,41 +356,44 @@ export function EstadisticasPartidoManager({
 
                 {/* Celdas por tipo */}
                 {tipos.map((t) => {
-                  const stat = getStatForJugadorAndTipo(
-                    [row],
-                    row.jugadorId,
-                    t.id
-                  );
-                  const isWorking = stat && actionInProgress === stat.id;
+                  const stat = getStatForJugadorAndTipo(rows, row.jugadorId, t.id);
+                  const minusKey: ActionKey = `${row.jugadorId}-${t.id}-minus`;
+                  const deleteKey: ActionKey = `${row.jugadorId}-${t.id}-delete`;
+                  const isMinusWorking = actionInProgress === minusKey;
+                  const isDeleteWorking = actionInProgress === deleteKey;
+                  const isWorking = isMinusWorking || isDeleteWorking;
+
                   return (
                     <td key={t.id} className="px-3 py-2.5 text-center">
                       {stat ? (
-                        <div className="flex items-center justify-center gap-1">
+                        <div className="flex items-center justify-center gap-1.5">
                           <span className="font-black text-primary font-mono text-sm min-w-[1.5rem]">
                             {stat.cantidad}
                           </span>
                           <div className="flex flex-col gap-0.5">
+                            {/* Botón -1: llama al endpoint "eliminar último" */}
                             <button
                               type="button"
-                              disabled={!!isWorking}
-                              onClick={() => handleMinus1(stat, row.jugadorId, equipoId)}
-                              title="-1 (si cantidad=1, elimina el registro)"
+                              disabled={isWorking}
+                              onClick={() => handleMinus1(row.jugadorId, t.id)}
+                              title="Deshacer último registro (+1→0 lo elimina)"
                               className="h-4 w-6 flex items-center justify-center rounded-[2px] bg-amber-500/15 text-amber-500 hover:bg-amber-500/30 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[9px] font-black"
                             >
-                              {isWorking ? (
+                              {isMinusWorking ? (
                                 <FaSpinner className="h-2 w-2 animate-spin" />
                               ) : (
                                 <FaMinus className="h-2 w-2" />
                               )}
                             </button>
+                            {/* Botón 🗑: elimina todos los registros del tipo en loop */}
                             <button
                               type="button"
-                              disabled={!!isWorking}
-                              onClick={() => handleDeleteStat(stat)}
-                              title="Eliminar todo el registro"
+                              disabled={isWorking}
+                              onClick={() => handleDeleteAll(row.jugadorId, t.id, stat.cantidad)}
+                              title={`Eliminar todos (${stat.cantidad}) los registros de este tipo`}
                               className="h-4 w-6 flex items-center justify-center rounded-[2px] bg-destructive/10 text-destructive hover:bg-destructive/25 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed text-[9px]"
                             >
-                              {isWorking ? (
+                              {isDeleteWorking ? (
                                 <FaSpinner className="h-2 w-2 animate-spin" />
                               ) : (
                                 <FaTrash className="h-2 w-2" />
@@ -437,6 +422,7 @@ export function EstadisticasPartidoManager({
     );
   };
 
+  // ── Loading state ──
   if (loadingStats) {
     return (
       <Card className="border border-border/60 shadow-md">
@@ -458,12 +444,13 @@ export function EstadisticasPartidoManager({
               Estadísticas por Jugador
             </CardTitle>
             <CardDescription className="text-xs">
-              Planilla de anotador en vivo — registra estadísticas individuales para este partido.
+              Planilla de anotador en vivo — cada clic registra un evento individual.
             </CardDescription>
           </div>
           {tiposEstadistica.length > 0 && (
             <span className="text-[10px] uppercase font-bold tracking-wider px-2 py-0.5 rounded-sm bg-primary/10 text-primary border border-primary/20 w-fit">
-              {tiposEstadistica.length} {tiposEstadistica.length === 1 ? "Tipo Disponible" : "Tipos Disponibles"}
+              {tiposEstadistica.length}{" "}
+              {tiposEstadistica.length === 1 ? "Tipo Disponible" : "Tipos Disponibles"}
             </span>
           )}
         </div>
@@ -472,11 +459,12 @@ export function EstadisticasPartidoManager({
       <CardContent className="p-6 space-y-8">
         {tiposEstadistica.length === 0 ? (
           <div className="p-8 text-center text-xs font-semibold text-muted-foreground bg-muted/20 border border-border/40 rounded-sm">
-            No hay tipos de estadística configurados en el catálogo para el deporte &ldquo;{torneo.deporte}&rdquo;.
+            No hay tipos de estadística configurados en el catálogo para el deporte &ldquo;
+            {torneo.deporte}&rdquo;.
           </div>
         ) : (
           <>
-            {/* ── Alertas de feedback ── */}
+            {/* ── Alertas ── */}
             {statsError && (
               <div className="p-3 bg-destructive/10 border border-destructive/25 text-destructive rounded-sm text-xs font-bold flex items-center justify-between">
                 <span>{statsError}</span>
@@ -505,9 +493,8 @@ export function EstadisticasPartidoManager({
               </div>
             )}
 
-            {/* ── Formulario de anotación en 4 pasos ── */}
+            {/* ── Formulario de captura rápida ── */}
             <div className="border border-border/60 rounded-sm bg-muted/5 overflow-hidden">
-              {/* Cabecera del formulario */}
               <div className="border-b border-border/40 bg-muted/20 px-4 py-3">
                 <p className="text-[10px] font-black uppercase tracking-widest text-muted-foreground flex items-center gap-1.5">
                   <FaPlus className="h-2.5 w-2.5 text-primary" />
@@ -516,7 +503,7 @@ export function EstadisticasPartidoManager({
               </div>
 
               <div className="p-4 space-y-4">
-                {/* Paso A: Selector de equipo */}
+                {/* A. Equipo */}
                 <div className="space-y-1.5">
                   <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground">
                     A. Equipo
@@ -548,9 +535,7 @@ export function EstadisticasPartidoManager({
                           {getInitials(partido.equipoLocal?.nombre || "Lo")}
                         </div>
                       )}
-                      <span className="truncate">
-                        {partido.equipoLocal?.nombre || "Local"}
-                      </span>
+                      <span className="truncate">{partido.equipoLocal?.nombre || "Local"}</span>
                     </button>
 
                     <button
@@ -586,9 +571,9 @@ export function EstadisticasPartidoManager({
                   </div>
                 </div>
 
-                {/* Pasos B + C + D en fila */}
+                {/* B + C + D en fila */}
                 <div className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_auto] gap-3 items-end">
-                  {/* Paso B: Jugador */}
+                  {/* B. Jugador */}
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                       <FaUser className="h-2.5 w-2.5" />
@@ -625,7 +610,7 @@ export function EstadisticasPartidoManager({
                     )}
                   </div>
 
-                  {/* Paso C: Tipo de Estadística */}
+                  {/* C. Estadística */}
                   <div className="space-y-1.5">
                     <p className="text-[10px] font-black uppercase tracking-wider text-muted-foreground flex items-center gap-1">
                       <FaChartBar className="h-2.5 w-2.5" />
@@ -649,7 +634,7 @@ export function EstadisticasPartidoManager({
                     </select>
                   </div>
 
-                  {/* Paso D: Botón +1 */}
+                  {/* D. Botón +1 Aplicar */}
                   <Button
                     type="button"
                     disabled={applying || !selectedJugadorId || !selectedTipoId}
@@ -669,6 +654,7 @@ export function EstadisticasPartidoManager({
 
             {/* ── Tablas de resumen ── */}
             <div className="space-y-6">
+              {/* Local */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-1">
                   <FaUsers className="h-3.5 w-3.5 text-sky-400" />
@@ -676,18 +662,11 @@ export function EstadisticasPartidoManager({
                     Resumen — {partido.equipoLocal?.nombre || "Equipo Local"}
                   </h3>
                 </div>
-                <TeamHeader
-                  tipo="local"
-                  equipo={partido.equipoLocal}
-                  count={localRows.length}
-                />
-                <TeamStatsTable
-                  rows={localRows}
-                  tipos={localTipos}
-                  equipoId={localEquipoId}
-                />
+                <TeamHeader tipo="local" equipo={partido.equipoLocal} count={localRows.length} />
+                <TeamStatsTable rows={localRows} tipos={localTipos} />
               </div>
 
+              {/* Visitante */}
               <div className="space-y-2">
                 <div className="flex items-center gap-2 mb-1">
                   <FaUsers className="h-3.5 w-3.5 text-primary" />
@@ -700,11 +679,7 @@ export function EstadisticasPartidoManager({
                   equipo={partido.equipoVisitante}
                   count={visitanteRows.length}
                 />
-                <TeamStatsTable
-                  rows={visitanteRows}
-                  tipos={visitanteTipos}
-                  equipoId={visitanteEquipoId}
-                />
+                <TeamStatsTable rows={visitanteRows} tipos={visitanteTipos} />
               </div>
             </div>
           </>
