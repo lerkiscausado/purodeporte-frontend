@@ -242,7 +242,7 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <EquipoAvatar
                         nombre={partido.equipoLocal.nombre}
-                        foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                        foto={partido.equipoLocal.foto}
                         size="lg"
                         className="mb-1.5"
                       />
@@ -264,7 +264,7 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                     <div className="flex flex-col items-center flex-1 min-w-0">
                       <EquipoAvatar
                         nombre={partido.equipoVisitante.nombre}
-                        foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                        foto={partido.equipoVisitante.foto}
                         size="lg"
                         className="mb-1.5"
                       />
@@ -366,7 +366,7 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                           <span className="truncate">{partido.equipoLocal.nombre}</span>
                           <EquipoAvatar
                             nombre={partido.equipoLocal.nombre}
-                            foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                            foto={partido.equipoLocal.foto}
                             size="sm"
                           />
                         </div>
@@ -385,7 +385,7 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
                         <div className="flex items-center justify-start gap-2 text-xs font-black uppercase tracking-tight text-foreground">
                           <EquipoAvatar
                             nombre={partido.equipoVisitante.nombre}
-                            foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                            foto={partido.equipoVisitante.foto}
                             size="sm"
                           />
                           <span className="truncate">{partido.equipoVisitante.nombre}</span>

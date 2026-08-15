@@ -535,7 +535,7 @@ export function TorneoDetailClient({
                     const equipo = item.equipo || {};
                     const eqNombre = equipo.nombre || "Equipo";
                     const eqFoto =
-                      equipo.foto || equipo.escudo || equipo.logoUrl || null;
+                      equipo.foto || equipo.escudo || null;
 
                     const valorTotal =
                       filtroTipoId !== "all"

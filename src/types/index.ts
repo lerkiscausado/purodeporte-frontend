@@ -33,11 +33,13 @@ export interface Partido {
   equipoLocal: {
     id: string;
     nombre: string;
+    foto?: string | null;
     logoUrl?: string;
   };
   equipoVisitante: {
     id: string;
     nombre: string;
+    foto?: string | null;
     logoUrl?: string;
   };
   fecha: string;

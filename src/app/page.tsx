@@ -63,7 +63,7 @@ export default async function Home() {
                   <div className="flex flex-col items-center flex-1 min-w-0">
                     <EquipoAvatar
                       nombre={partidoDestacado.equipoLocal.nombre}
-                      foto={partidoDestacado.equipoLocal.logoUrl || (partidoDestacado.equipoLocal as any).foto}
+                      foto={partidoDestacado.equipoLocal.foto}
                       size="md"
                       className="mb-1"
                     />
@@ -79,7 +79,7 @@ export default async function Home() {
                   <div className="flex flex-col items-center flex-1 min-w-0">
                     <EquipoAvatar
                       nombre={partidoDestacado.equipoVisitante.nombre}
-                      foto={partidoDestacado.equipoVisitante.logoUrl || (partidoDestacado.equipoVisitante as any).foto}
+                      foto={partidoDestacado.equipoVisitante.foto}
                       size="md"
                       className="mb-1"
                     />

@@ -115,11 +115,13 @@ export function mapPartidoBackendToPartido(item: any): Partido {
     equipoLocal: {
       id: String(item.equipoLocal?.id || item.idEquipoLocal || "local"),
       nombre: equipoLocalNombre,
+      foto: item.equipoLocal?.escudo || item.equipoLocal?.foto || item.equipoLocal?.logo || null,
       logoUrl: getUploadUrl("equipos", item.equipoLocal?.escudo || item.equipoLocal?.logoUrl || item.equipoLocal?.logo || item.equipoLocal?.foto),
     },
     equipoVisitante: {
       id: String(item.equipoVisitante?.id || item.idEquipoVisitante || "visitante"),
       nombre: equipoVisitanteNombre,
+      foto: item.equipoVisitante?.escudo || item.equipoVisitante?.foto || item.equipoVisitante?.logo || null,
       logoUrl: getUploadUrl("equipos", item.equipoVisitante?.escudo || item.equipoVisitante?.logoUrl || item.equipoVisitante?.logo || item.equipoVisitante?.foto),
     },
     fecha: fullDate || new Date().toISOString(),

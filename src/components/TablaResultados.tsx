@@ -34,7 +34,7 @@ export function TablaResultados({ partidos }: TablaResultadosProps) {
             <div className="flex items-center gap-1.5 min-w-0 flex-1">
               <EquipoAvatar
                 nombre={partido.equipoLocal.nombre}
-                foto={partido.equipoLocal.logoUrl || (partido.equipoLocal as any).foto}
+                foto={partido.equipoLocal.foto}
                 size="xs"
               />
               <span className={`text-xs font-bold truncate ${
@@ -54,7 +54,7 @@ export function TablaResultados({ partidos }: TablaResultadosProps) {
               </span>
               <EquipoAvatar
                 nombre={partido.equipoVisitante.nombre}
-                foto={partido.equipoVisitante.logoUrl || (partido.equipoVisitante as any).foto}
+                foto={partido.equipoVisitante.foto}
                 size="xs"
               />
             </div>
