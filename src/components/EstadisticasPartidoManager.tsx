@@ -317,11 +317,15 @@ export function EstadisticasPartidoManager({
 
   const getStatEntry = (row: any, tipoId?: number) => {
     if (!tipoId) return null;
-    return (
-      row.estadisticas.find(
-        (st: any) => Number(st.tipo?.id ?? st.tipoEstadisticaId ?? st.id_tipo) === tipoId
-      ) || null
+    const matching = row.estadisticas.filter(
+      (st: any) => Number(st.tipoEstadisticaId ?? st.tipo?.id ?? st.id_tipo) === tipoId
     );
+    if (matching.length === 0) return null;
+    const cantidadTotal = matching.reduce(
+      (sum: number, st: any) => sum + (Number(st.cantidad) || 0),
+      0
+    );
+    return { cantidad: cantidadTotal };
   };
 
   if (loadingStats) {
