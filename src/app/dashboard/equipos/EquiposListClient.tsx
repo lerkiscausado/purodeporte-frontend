@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   FaUserFriends,
   FaPlus,
@@ -14,6 +14,8 @@ import {
   FaList,
   FaSearch,
   FaEnvelope,
+  FaChevronLeft,
+  FaChevronRight,
 } from "react-icons/fa";
 import { EditEquipoModal } from "@/components/EditEquipoModal";
 import { DeleteEquipoButton } from "@/components/DeleteEquipoButton";
@@ -27,10 +29,18 @@ interface EquiposListClientProps {
   initialEquipos: any[];
 }
 
+const ITEMS_PER_PAGE = 12;
+
 export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
-  const [viewMode, setViewMode] = useState<"table" | "cards">("cards");
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset de página al cambiar búsqueda o filtro de deporte
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [search, sportFilter]);
 
   // Get sport icon
   const getSportIcon = (deporte: string) => {
@@ -60,6 +70,39 @@ export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
 
     return matchesSearch && matchesSport;
   });
+
+  // Paginación
+  const totalPages = Math.max(1, Math.ceil(filteredEquipos.length / ITEMS_PER_PAGE));
+  const paginatedEquipos = filteredEquipos.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE
+  );
+
+  const startItem = filteredEquipos.length === 0 ? 0 : (currentPage - 1) * ITEMS_PER_PAGE + 1;
+  const endItem = Math.min(currentPage * ITEMS_PER_PAGE, filteredEquipos.length);
+
+  // Helper para ventana de números de página
+  const getPageNumbers = (current: number, total: number) => {
+    if (total <= 7) {
+      return Array.from({ length: total }, (_, i) => i + 1);
+    }
+    const pages: (number | string)[] = [1];
+    if (current > 3) {
+      pages.push("...");
+    }
+    const start = Math.max(2, current - 1);
+    const end = Math.min(total - 1, current + 1);
+    for (let i = start; i <= end; i++) {
+      pages.push(i);
+    }
+    if (current < total - 2) {
+      pages.push("...");
+    }
+    pages.push(total);
+    return pages;
+  };
+
+  const pageNumbers = getPageNumbers(currentPage, totalPages);
 
   const getInitials = (name: string) => {
     return name.slice(0, 2).toUpperCase();
@@ -111,7 +154,7 @@ export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
           <select
             value={sportFilter}
             onChange={(e) => setSportFilter(e.target.value)}
-            className="h-10 px-3 bg-card border border-border/60 rounded-sm text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary uppercase tracking-wider text-xs shrink-0"
+            className="h-10 px-3 bg-card border border-border/60 rounded-sm text-sm font-semibold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary uppercase tracking-wider text-xs shrink-0 cursor-pointer"
           >
             <option value="all">TODOS LOS DEPORTES</option>
             {sports.filter((s) => s !== "all").map((sport) => (
@@ -127,7 +170,7 @@ export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
           <button
             onClick={() => setViewMode("cards")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-sm transition-all duration-150",
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-sm transition-all duration-150 cursor-pointer",
               viewMode === "cards"
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -140,7 +183,7 @@ export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
           <button
             onClick={() => setViewMode("table")}
             className={cn(
-              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-sm transition-all duration-150",
+              "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold uppercase rounded-sm transition-all duration-150 cursor-pointer",
               viewMode === "table"
                 ? "bg-card text-foreground shadow-sm"
                 : "text-muted-foreground hover:text-foreground"
@@ -165,203 +208,275 @@ export function EquiposListClient({ initialEquipos }: EquiposListClientProps) {
           </div>
         </div>
       ) : viewMode === "cards" ? (
-        /* VISTA DE TARJETAS (CARDS) - ESTÉTICA PREMIUM */
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
-          {filteredEquipos.map((equipo) => (
-            <div
-              key={equipo.id}
-              className="border border-border/60 rounded-sm shadow-sm overflow-hidden bg-card flex flex-col group hover:shadow-md hover:border-primary/30 transition-all duration-200 animate-in fade-in-50 duration-300"
-            >
-              {/* Encabezado/Banner de la Tarjeta */}
-              <div className={cn(
-                "h-12 bg-gradient-to-r relative shrink-0",
-                getSportBanner(equipo.deporte)
-              )}>
-                {/* Deporte Badge */}
-                <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-black/30 backdrop-blur-md border border-white/10 text-[8px] font-black uppercase tracking-widest text-white">
-                  {getSportIcon(equipo.deporte)}
-                  {equipo.deporte}
-                </span>
-              </div>
-
-              {/* Contenido Principal */}
-              <div className="p-4 pt-0 flex-1 flex flex-col items-center text-center -mt-8 relative">
-                {/* Crest/Photo */}
-                <div className="relative h-16 w-16 rounded-full bg-muted border-4 border-card shadow-md flex items-center justify-center overflow-hidden mb-2.5 shrink-0">
-                  {equipo.foto ? (
-                    <img
-                      src={getUploadUrl("equipos", equipo.foto)}
-                      alt={equipo.nombre}
-                      className="absolute inset-0 h-full w-full object-cover bg-muted"
-                      onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
-                      }}
-                    />
-                  ) : (
-                    <div className={cn(
-                      "absolute inset-0 flex items-center justify-center text-lg font-black text-white bg-gradient-to-br shadow-inner uppercase",
-                      getGradientBg(equipo.nombre)
-                    )}>
-                      {getInitials(equipo.nombre)}
-                    </div>
-                  )}
+        /* VISTA DE TARJETAS (CARDS) - PAGINADA */
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4">
+            {paginatedEquipos.map((equipo) => (
+              <div
+                key={equipo.id}
+                className="border border-border/60 rounded-sm shadow-sm overflow-hidden bg-card flex flex-col group hover:shadow-md hover:border-primary/30 transition-all duration-200 animate-in fade-in-50 duration-300"
+              >
+                {/* Encabezado/Banner de la Tarjeta */}
+                <div className={cn(
+                  "h-12 bg-gradient-to-r relative shrink-0",
+                  getSportBanner(equipo.deporte)
+                )}>
+                  {/* Deporte Badge */}
+                  <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-black/30 backdrop-blur-md border border-white/10 text-[8px] font-black uppercase tracking-widest text-white">
+                    {getSportIcon(equipo.deporte)}
+                    {equipo.deporte}
+                  </span>
                 </div>
 
-                {/* Info */}
-                <h3 className="font-black text-sm uppercase text-foreground leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-1">
-                  {equipo.nombre}
-                </h3>
-
-                {/* Status Badge */}
-                <span className={cn(
-                  "inline-flex px-1.5 py-0.5 rounded-sm border text-[8px] font-black uppercase tracking-widest mt-1.5",
-                  equipo.estado === "Activo"
-                    ? "bg-green-500/10 text-green-500 border-green-500/20"
-                    : "bg-red-500/10 text-red-500 border-red-500/20"
-                )}>
-                  {equipo.estado || "Activo"}
-                </span>
-
-                <hr className="w-full border-border/40 my-3" />
-
-                {/* Contact details */}
-                <div className="w-full space-y-2 text-xs text-left font-medium text-muted-foreground flex-1">
-                  <div className="flex items-center gap-2">
-                    <FaUser className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                    <span className="truncate">
-                      <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Representante</span>
-                      <span className="font-semibold text-foreground text-[11px]">{equipo.representante}</span>
-                    </span>
+                {/* Contenido Principal */}
+                <div className="p-4 pt-0 flex-1 flex flex-col items-center text-center -mt-8 relative">
+                  {/* Crest/Photo */}
+                  <div className="relative h-16 w-16 rounded-full bg-muted border-4 border-card shadow-md flex items-center justify-center overflow-hidden mb-2.5 shrink-0">
+                    {equipo.foto ? (
+                      <img
+                        src={getUploadUrl("equipos", equipo.foto)}
+                        alt={equipo.nombre}
+                        className="absolute inset-0 h-full w-full object-cover bg-muted"
+                        onError={(e) => {
+                          (e.target as HTMLElement).style.display = 'none';
+                        }}
+                      />
+                    ) : (
+                      <div className={cn(
+                        "absolute inset-0 flex items-center justify-center text-lg font-black text-white bg-gradient-to-br shadow-inner uppercase",
+                        getGradientBg(equipo.nombre)
+                      )}>
+                        {getInitials(equipo.nombre)}
+                      </div>
+                    )}
                   </div>
 
-                  {equipo.telefono && (
-                    <div className="flex items-center gap-2">
-                      <FaPhone className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                      <a href={`tel:${equipo.telefono}`} className="hover:text-primary transition-colors truncate">
-                        <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Teléfono</span>
-                        <span className="font-semibold text-foreground text-[11px]">{equipo.telefono}</span>
-                      </a>
-                    </div>
-                  )}
+                  {/* Info */}
+                  <h3 className="font-black text-sm uppercase text-foreground leading-tight tracking-tight group-hover:text-primary transition-colors line-clamp-1">
+                    {equipo.nombre}
+                  </h3>
 
-                  {equipo.correo && (
+                  {/* Status Badge */}
+                  <span className={cn(
+                    "inline-flex px-1.5 py-0.5 rounded-sm border text-[8px] font-black uppercase tracking-widest mt-1.5",
+                    equipo.estado === "Activo"
+                      ? "bg-green-500/10 text-green-500 border-green-500/20"
+                      : "bg-red-500/10 text-red-500 border-red-500/20"
+                  )}>
+                    {equipo.estado || "Activo"}
+                  </span>
+
+                  <hr className="w-full border-border/40 my-3" />
+
+                  {/* Contact details */}
+                  <div className="w-full space-y-2 text-xs text-left font-medium text-muted-foreground flex-1">
                     <div className="flex items-center gap-2">
-                      <FaEnvelope className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                      <a href={`mailto:${equipo.correo}`} className="hover:text-primary transition-colors truncate">
-                        <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Correo</span>
-                        <span className="font-semibold text-foreground text-[11px]">{equipo.correo}</span>
-                      </a>
+                      <FaUser className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                      <span className="truncate">
+                        <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Representante</span>
+                        <span className="font-semibold text-foreground text-[11px]">{equipo.representante}</span>
+                      </span>
                     </div>
-                  )}
+
+                    {equipo.telefono && (
+                      <div className="flex items-center gap-2">
+                        <FaPhone className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                        <a href={`tel:${equipo.telefono}`} className="hover:text-primary transition-colors truncate">
+                          <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Teléfono</span>
+                          <span className="font-semibold text-foreground text-[11px]">{equipo.telefono}</span>
+                        </a>
+                      </div>
+                    )}
+
+                    {equipo.correo && (
+                      <div className="flex items-center gap-2">
+                        <FaEnvelope className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                        <a href={`mailto:${equipo.correo}`} className="hover:text-primary transition-colors truncate">
+                          <span className="text-[9px] text-muted-foreground/50 uppercase font-black block tracking-wider -mb-0.5">Correo</span>
+                          <span className="font-semibold text-foreground text-[11px]">{equipo.correo}</span>
+                        </a>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Acciones */}
+                <div className="p-3 border-t border-border/40 bg-muted/10 flex items-center justify-end gap-2.5 shrink-0">
+                  <EditEquipoModal equipo={equipo} />
+                  <DeleteEquipoButton
+                    equipoId={equipo.id}
+                    equipoNombre={equipo.nombre}
+                  />
                 </div>
               </div>
-
-              {/* Acciones */}
-              <div className="p-3 border-t border-border/40 bg-muted/10 flex items-center justify-end gap-2.5 shrink-0">
-                <EditEquipoModal equipo={equipo} />
-                <DeleteEquipoButton
-                  equipoId={equipo.id}
-                  equipoNombre={equipo.nombre}
-                />
-              </div>
-            </div>
-          ))}
+            ))}
+          </div>
         </div>
       ) : (
-        /* VISTA DE TABLA (TABLE) - ESTILO ORIGINAL MEJORADO */
-        <div className="border border-border/60 rounded-sm shadow-md overflow-hidden bg-card animate-in fade-in-50 duration-300">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-border/60 bg-muted/10">
-                  <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Equipo</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Representante</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Teléfono</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Deporte</th>
-                  <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Estado</th>
-                  <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Acciones</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredEquipos.map((equipo, index) => (
-                  <tr
-                    key={equipo.id}
-                    className={`border-b border-border/40 hover:bg-muted/10 transition-colors ${index % 2 === 0 ? "" : "bg-muted/5"}`}
-                  >
-                    {/* Equipo */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-3">
-                        <div className="relative h-8 w-8 rounded-sm bg-muted flex items-center justify-center font-bold text-muted-foreground text-xs uppercase overflow-hidden shrink-0">
-                          {getSportIcon(equipo.deporte)}
-                          {equipo.foto && (
-                            <img
-                              src={getUploadUrl("equipos", equipo.foto)}
-                              alt={equipo.nombre}
-                              className="absolute inset-0 h-full w-full object-cover bg-muted"
-                              onError={(e) => {
-                                (e.target as HTMLElement).style.display = 'none';
-                              }}
-                            />
-                          )}
-                        </div>
-                        <span className="font-black text-sm uppercase tracking-tight">{equipo.nombre}</span>
-                      </div>
-                    </td>
-
-                    {/* Representante */}
-                    <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">
-                      <div className="flex items-center gap-1.5">
-                        <FaUser className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                        <span>{equipo.representante}</span>
-                      </div>
-                    </td>
-
-                    {/* Teléfono */}
-                    <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">
-                      {equipo.telefono ? (
-                        <div className="flex items-center gap-1.5">
-                          <FaPhone className="h-3 w-3 shrink-0 text-muted-foreground/60" />
-                          <span>{equipo.telefono}</span>
-                        </div>
-                      ) : (
-                        <span className="text-muted-foreground/40">—</span>
-                      )}
-                    </td>
-
-                    {/* Deporte */}
-                    <td className="px-4 py-3">
-                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
-                        {getSportIcon(equipo.deporte)}
-                        {equipo.deporte}
-                      </span>
-                    </td>
-
-                    {/* Estado */}
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex px-2 py-0.5 rounded-sm border text-[10px] font-bold uppercase tracking-wider
-                        ${equipo.estado === "Activo"
-                          ? "bg-green-500/10 text-green-500 border-green-500/20"
-                          : "bg-red-500/10 text-red-500 border-red-500/20"
-                        }`}
-                      >
-                        {equipo.estado || "Activo"}
-                      </span>
-                    </td>
-
-                    {/* Acciones */}
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-center gap-3">
-                        <EditEquipoModal equipo={equipo} />
-                        <DeleteEquipoButton
-                          equipoId={equipo.id}
-                          equipoNombre={equipo.nombre}
-                        />
-                      </div>
-                    </td>
+        /* VISTA DE TABLA (TABLE) - PAGINADA */
+        <div className="space-y-6">
+          <div className="border border-border/60 rounded-sm shadow-md overflow-hidden bg-card animate-in fade-in-50 duration-300">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-border/60 bg-muted/10">
+                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Equipo</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Representante</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Teléfono</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Deporte</th>
+                    <th className="text-left px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Estado</th>
+                    <th className="text-center px-4 py-3 text-[10px] font-black uppercase tracking-widest text-muted-foreground">Acciones</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {paginatedEquipos.map((equipo, index) => (
+                    <tr
+                      key={equipo.id}
+                      className={`border-b border-border/40 hover:bg-muted/10 transition-colors ${index % 2 === 0 ? "" : "bg-muted/5"}`}
+                    >
+                      {/* Equipo */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="relative h-8 w-8 rounded-sm bg-muted flex items-center justify-center font-bold text-muted-foreground text-xs uppercase overflow-hidden shrink-0">
+                            {getSportIcon(equipo.deporte)}
+                            {equipo.foto && (
+                              <img
+                                src={getUploadUrl("equipos", equipo.foto)}
+                                alt={equipo.nombre}
+                                className="absolute inset-0 h-full w-full object-cover bg-muted"
+                                onError={(e) => {
+                                  (e.target as HTMLElement).style.display = 'none';
+                                }}
+                              />
+                            )}
+                          </div>
+                          <span className="font-black text-sm uppercase tracking-tight">{equipo.nombre}</span>
+                        </div>
+                      </td>
+
+                      {/* Representante */}
+                      <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">
+                        <div className="flex items-center gap-1.5">
+                          <FaUser className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                          <span>{equipo.representante}</span>
+                        </div>
+                      </td>
+
+                      {/* Teléfono */}
+                      <td className="px-4 py-3 text-xs font-semibold text-muted-foreground">
+                        {equipo.telefono ? (
+                          <div className="flex items-center gap-1.5">
+                            <FaPhone className="h-3 w-3 shrink-0 text-muted-foreground/60" />
+                            <span>{equipo.telefono}</span>
+                          </div>
+                        ) : (
+                          <span className="text-muted-foreground/40">—</span>
+                        )}
+                      </td>
+
+                      {/* Deporte */}
+                      <td className="px-4 py-3">
+                        <span className="inline-flex items-center gap-1.5 text-xs font-bold text-foreground">
+                          {getSportIcon(equipo.deporte)}
+                          {equipo.deporte}
+                        </span>
+                      </td>
+
+                      {/* Estado */}
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex px-2 py-0.5 rounded-sm border text-[10px] font-bold uppercase tracking-wider
+                          ${equipo.estado === "Activo"
+                            ? "bg-green-500/10 text-green-500 border-green-500/20"
+                            : "bg-red-500/10 text-red-500 border-red-500/20"
+                          }`}
+                        >
+                          {equipo.estado || "Activo"}
+                        </span>
+                      </td>
+
+                      {/* Acciones */}
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-center gap-3">
+                          <EditEquipoModal equipo={equipo} />
+                          <DeleteEquipoButton
+                            equipoId={equipo.id}
+                            equipoNombre={equipo.nombre}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Controles de Paginación */}
+      {totalPages > 1 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-card p-4 rounded-sm border border-border/60 shadow-sm">
+          <span className="text-xs font-semibold text-muted-foreground order-2 sm:order-1">
+            Mostrando <strong className="text-foreground font-bold">{startItem}</strong> -{" "}
+            <strong className="text-foreground font-bold">{endItem}</strong> de{" "}
+            <strong className="text-foreground font-bold">{filteredEquipos.length}</strong> equipos
+          </span>
+
+          <div className="flex items-center gap-1.5 order-1 sm:order-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+              disabled={currentPage === 1}
+              className="h-8 px-2.5 text-xs font-bold uppercase rounded-sm border-border/60 hover:bg-muted/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              <FaChevronLeft className="h-2.5 w-2.5 mr-1" />
+              Anterior
+            </Button>
+
+            <div className="flex items-center gap-1">
+              {pageNumbers.map((page, idx) => {
+                if (page === "...") {
+                  return (
+                    <span
+                      key={`ellipsis-${idx}`}
+                      className="px-2 py-1 text-xs text-muted-foreground font-bold"
+                    >
+                      ...
+                    </span>
+                  );
+                }
+                const isCurrent = page === currentPage;
+                return (
+                  <button
+                    key={page}
+                    type="button"
+                    onClick={() => setCurrentPage(page as number)}
+                    className={cn(
+                      "h-8 min-w-8 px-2 flex items-center justify-center rounded-sm text-xs font-bold transition-all cursor-pointer",
+                      isCurrent
+                        ? "bg-primary text-primary-foreground shadow-sm ring-1 ring-primary/40"
+                        : "bg-muted/20 text-muted-foreground border border-border/60 hover:bg-muted/60 hover:text-foreground"
+                    )}
+                  >
+                    {page}
+                  </button>
+                );
+              })}
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+              disabled={currentPage === totalPages}
+              className="h-8 px-2.5 text-xs font-bold uppercase rounded-sm border-border/60 hover:bg-muted/40 cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
+            >
+              Siguiente
+              <FaChevronRight className="h-2.5 w-2.5 ml-1" />
+            </Button>
           </div>
         </div>
       )}
