@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Partido } from "@/types";
 import { Badge } from "./ui/badge";
 import { EquipoAvatar } from "./EquipoAvatar";
+import { PartidoEstadisticasTable } from "./PartidoEstadisticasTable";
 import { getEstadisticasPorPartido } from "@/app/actions/estadisticas";
 import { FaChevronDown, FaChevronUp, FaChartBar } from "react-icons/fa";
 
@@ -170,77 +171,11 @@ export function PartidoItem({ partido }: PartidoItemProps) {
           </button>
 
           {isOpen && (
-            <div className="mt-2 overflow-x-auto rounded-sm border border-border/50 bg-muted/20 animate-in fade-in duration-150">
-              <table className="w-full text-left text-[11px]">
-                <thead className="bg-muted/60 text-[9px] uppercase tracking-wider text-muted-foreground border-b border-border/40 font-bold">
-                  <tr>
-                    <th className="py-1.5 px-2">Jugador</th>
-                    <th className="py-1.5 px-2">Equipo</th>
-                    <th className="py-1.5 px-2">Estadísticas</th>
-                    <th className="py-1.5 px-2 text-right">Pts</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/30">
-                  {stats!.map((item: any, idx: number) => {
-                    const jugador = item.jugador || {};
-                    const jNombre =
-                      `${jugador.nombre || jugador.nombres || ""} ${
-                        jugador.apellidos || jugador.apellido || ""
-                      }`.trim() || `Jugador #${jugador.id || idx + 1}`;
-                    const equipo = item.equipo || {};
-                    const eqNombre = equipo.nombre || "Equipo";
-                    const playerStats = item.estadisticas || [];
-                    const totalPuntos = item.totalPuntos ?? "-";
-
-                    return (
-                      <tr
-                        key={idx}
-                        className="hover:bg-muted/40 transition-colors"
-                      >
-                        <td
-                          className="py-1.5 px-2 font-bold text-foreground truncate max-w-[120px]"
-                          title={jNombre}
-                        >
-                          {jNombre}
-                        </td>
-                        <td
-                          className="py-1.5 px-2 text-muted-foreground text-[10px] truncate max-w-[90px]"
-                          title={eqNombre}
-                        >
-                          {eqNombre}
-                        </td>
-                        <td className="py-1.5 px-2">
-                          <div className="flex flex-wrap gap-1">
-                            {playerStats.map((st: any, sIdx: number) => {
-                              const sName =
-                                typeof st.tipo === "object"
-                                  ? st.tipo?.nombre
-                                  : st.tipo ||
-                                    st.tipoEstadistica?.nombre ||
-                                    st.nombre ||
-                                    "Stat";
-                              return (
-                                <span
-                                  key={sIdx}
-                                  className="bg-card border border-border/60 text-[9px] px-1.5 py-0.5 rounded-sm font-semibold text-foreground"
-                                >
-                                  {sName}:{" "}
-                                  <strong className="text-primary font-mono">
-                                    {st.cantidad}
-                                  </strong>
-                                </span>
-                              );
-                            })}
-                          </div>
-                        </td>
-                        <td className="py-1.5 px-2 text-right font-black font-mono text-primary text-[10px]">
-                          {totalPuntos}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
+            <div className="mt-2 animate-in fade-in duration-150">
+              <PartidoEstadisticasTable
+                stats={stats!}
+                deporte={partido.deporte || "Futbol"}
+              />
             </div>
           )}
         </div>

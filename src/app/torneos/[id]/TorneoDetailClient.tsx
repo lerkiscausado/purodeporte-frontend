@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { Torneo, Partido } from "@/types";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { PartidoItem } from "@/components/PartidoItem";
+import { EquipoDetalleModal } from "@/components/EquipoDetalleModal";
 import {
   FaUsers,
   FaTrophy,
@@ -112,6 +113,7 @@ export function TorneoDetailClient({
     "posiciones" | "partidos" | "equipos" | "lideres"
   >("posiciones");
 
+  const [equipoSeleccionado, setEquipoSeleccionado] = useState<any>(null);
   const [lideres, setLideres] = useState<any[]>([]);
   const [loadingLideres, setLoadingLideres] = useState<boolean>(false);
   const [filtroTipoId, setFiltroTipoId] = useState<string>("all");
@@ -440,11 +442,21 @@ export function TorneoDetailClient({
                 return (
                   <div
                     key={item.id || idx}
-                    className="bg-card border border-border/60 rounded-sm p-4 flex items-center gap-3.5 shadow-sm hover:border-primary/40 transition-colors"
+                    onClick={() => setEquipoSeleccionado(equipo)}
+                    className="bg-card border border-border/60 rounded-sm p-4 flex items-center gap-3.5 shadow-sm hover:border-primary/60 hover:shadow-md transition-all cursor-pointer group"
+                    title="Clic para ver plantilla y estadísticas del equipo"
                   >
-                    <EquipoAvatar nombre={nombreEquipo} foto={fotoEquipo} size="lg" />
+                    <EquipoAvatar
+                      nombre={nombreEquipo}
+                      foto={fotoEquipo}
+                      size="lg"
+                      className="group-hover:scale-105 transition-transform shrink-0"
+                    />
                     <div className="min-w-0 flex-1">
-                      <h4 className="font-black text-sm text-foreground uppercase tracking-tight truncate" title={nombreEquipo}>
+                      <h4
+                        className="font-black text-sm text-foreground uppercase tracking-tight truncate group-hover:text-primary transition-colors"
+                        title={nombreEquipo}
+                      >
                         {nombreEquipo}
                       </h4>
                       {representante ? (
@@ -604,6 +616,16 @@ export function TorneoDetailClient({
           )}
         </div>
       )}
+
+      {/* Modal de Detalle de Equipo (Roster y Estadísticas Acumuladas) */}
+      <EquipoDetalleModal
+        open={equipoSeleccionado !== null}
+        equipo={equipoSeleccionado}
+        torneoId={Number(torneo.id)}
+        torneoDeporte={torneo.deporte}
+        partidosDelTorneo={partidos}
+        onClose={() => setEquipoSeleccionado(null)}
+      />
     </div>
   );
 }

@@ -20,6 +20,7 @@ import {
 import { ConfirmDeleteStatModal } from "@/components/ConfirmDeleteStatModal";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
+import { ColumnDefinition, getColumnsForSport } from "@/lib/estadisticasColumnas";
 
 interface EstadisticasPartidoManagerProps {
   partido: any;
@@ -51,13 +52,6 @@ function getGradientBg(name: string): string {
 }
 
 type ActionKey = string; // `${jugadorId}-${tipoId}-minus` | `${jugadorId}-${tipoId}-delete`
-
-interface ColumnDefinition {
-  key: string;
-  label: string;
-  tipoId?: number;
-  isPoints?: boolean;
-}
 
 export function EstadisticasPartidoManager({
   partido,
@@ -239,74 +233,7 @@ export function EstadisticasPartidoManager({
   };
 
   // ── 2. Definición de Columnas según el Deporte ──
-  const getColumnsForSport = (): ColumnDefinition[] => {
-    const dep = (torneo.deporte || "").toLowerCase().trim();
-
-    const findTipo = (predicate: (nombre: string) => boolean) => {
-      return tiposEstadistica.find((t) => predicate((t.nombre || "").toLowerCase().trim()));
-    };
-
-    if (
-      dep.includes("futbol") ||
-      dep.includes("fútbol") ||
-      dep.includes("soccer") ||
-      dep.includes("microfutbol") ||
-      dep.includes("microfútbol") ||
-      dep.includes("golito")
-    ) {
-      // Fútbol / Microfutbol / Golito: # | Nombre | Goles | Faltas | Tarjeta Amarilla | Tarjeta Roja
-      const golTipo = findTipo((n) => n === "gol" || n.includes("gol"));
-      const faltaTipo = findTipo((n) => n.includes("falta"));
-      const amarillaTipo = findTipo((n) => n.includes("amarill"));
-      const rojaTipo = findTipo((n) => n.includes("roj"));
-
-      return [
-        { key: "goles", label: "Goles", tipoId: golTipo?.id ? Number(golTipo.id) : undefined },
-        { key: "faltas", label: "Faltas", tipoId: faltaTipo?.id ? Number(faltaTipo.id) : undefined },
-        { key: "amarillas", label: "Tarjeta Amarilla", tipoId: amarillaTipo?.id ? Number(amarillaTipo.id) : undefined },
-        { key: "rojas", label: "Tarjeta Roja", tipoId: rojaTipo?.id ? Number(rojaTipo.id) : undefined },
-      ];
-    }
-
-    if (dep.includes("baloncesto") || dep.includes("basket")) {
-      // Baloncesto: # | Nombre | T2 | T3 | TL | Pts
-      const t2Tipo = findTipo((n) => n.includes("campo") || n.includes("t2") || n.includes("doble") || n.includes("2 puntos"));
-      const t3Tipo = findTipo((n) => n.includes("triple") || n.includes("t3") || n.includes("3 puntos"));
-      const tlTipo = findTipo((n) => n.includes("libre") || n.includes("tl") || n.includes("1 punto"));
-
-      return [
-        { key: "t2", label: "T2", tipoId: t2Tipo?.id ? Number(t2Tipo.id) : undefined },
-        { key: "t3", label: "T3", tipoId: t3Tipo?.id ? Number(t3Tipo.id) : undefined },
-        { key: "tl", label: "TL", tipoId: tlTipo?.id ? Number(tlTipo.id) : undefined },
-        { key: "pts", label: "Pts", isPoints: true },
-      ];
-    }
-
-    if (dep.includes("voley") || dep.includes("voleibol") || dep.includes("volleyball")) {
-      // Voleibol: # | Nombre | Remates | Saques | Bloqueos | Pts
-      const remateTipo = findTipo((n) => n.includes("remate"));
-      const saqueTipo = findTipo((n) => n.includes("saque") || n.includes("ace"));
-      const bloqueoTipo = findTipo((n) => n.includes("bloqueo"));
-
-      return [
-        { key: "remates", label: "Remates", tipoId: remateTipo?.id ? Number(remateTipo.id) : undefined },
-        { key: "saques", label: "Saques", tipoId: saqueTipo?.id ? Number(saqueTipo.id) : undefined },
-        { key: "bloqueos", label: "Bloqueos", tipoId: bloqueoTipo?.id ? Number(bloqueoTipo.id) : undefined },
-        { key: "pts", label: "Pts", isPoints: true },
-      ];
-    }
-
-    // Fallback genérico para otros deportes
-    const genericCols: ColumnDefinition[] = tiposEstadistica.map((t) => ({
-      key: `stat-${t.id}`,
-      label: t.nombre,
-      tipoId: Number(t.id),
-    }));
-    genericCols.push({ key: "pts", label: "Pts", isPoints: true });
-    return genericCols;
-  };
-
-  const columns = getColumnsForSport();
+  const columns = getColumnsForSport(torneo.deporte, tiposEstadistica);
 
   // ── Cruce de datos por equipo ──
   const buildTeamRows = (equipoId: number) => {

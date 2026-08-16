@@ -8,14 +8,13 @@ export async function getPlanillasPorTorneo(torneoId: number) {
     const cookieStore = await cookies();
     const token = cookieStore.get("session_token")?.value;
 
-    if (!token) {
-      return { error: "No tienes una sesión activa. Inicia sesión nuevamente." };
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers["Authorization"] = `Bearer ${token}`;
     }
 
     const response = await fetch(getApiUrl(`planillas/torneo/${torneoId}`), {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
+      headers,
       next: { revalidate: 0 },
     });
 
