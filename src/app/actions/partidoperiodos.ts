@@ -32,6 +32,27 @@ export async function getPeriodosPorPartido(partidoId: number) {
   }
 }
 
+export async function getPeriodosPublicosPorPartido(partidoId: number) {
+  try {
+    const response = await fetch(
+      getApiUrl(`partidoperiodos/partido/${partidoId}/public`),
+      {
+        next: { revalidate: 0 },
+      }
+    );
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    console.error("Error al obtener periodos públicos del partido:", error);
+    return [];
+  }
+}
+
 export async function createPartidoPeriodo(dto: {
   idPartido: number;
   nombrePeriodo: string;

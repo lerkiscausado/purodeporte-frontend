@@ -5,7 +5,9 @@ import { Partido } from "@/types";
 import { Badge } from "./ui/badge";
 import { EquipoAvatar } from "./EquipoAvatar";
 import { PartidoEstadisticasTable } from "./PartidoEstadisticasTable";
+import { PartidoPeriodosTable } from "./PartidoPeriodosTable";
 import { getEstadisticasPorPartido } from "@/app/actions/estadisticas";
+import { getPeriodosPublicosPorPartido } from "@/app/actions/partidoperiodos";
 import { FaChevronDown, FaChevronUp, FaChartBar } from "react-icons/fa";
 
 interface PartidoItemProps {
@@ -19,14 +21,19 @@ export function PartidoItem({ partido }: PartidoItemProps) {
   const isSuspendido = partido.estado === "Suspendido";
 
   const [stats, setStats] = useState<any[] | null>(null);
+  const [periodos, setPeriodos] = useState<any[] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (isFinalizado && partido.id) {
       let isMounted = true;
-      getEstadisticasPorPartido(Number(partido.id)).then((res) => {
+      Promise.all([
+        getEstadisticasPorPartido(Number(partido.id)),
+        getPeriodosPublicosPorPartido(Number(partido.id)),
+      ]).then(([statsRes, periodosRes]) => {
         if (isMounted) {
-          setStats(Array.isArray(res) ? res : []);
+          setStats(Array.isArray(statsRes) ? statsRes : []);
+          setPeriodos(Array.isArray(periodosRes) ? periodosRes : []);
         }
       });
       return () => {
@@ -34,6 +41,7 @@ export function PartidoItem({ partido }: PartidoItemProps) {
       };
     } else {
       setStats(null);
+      setPeriodos(null);
     }
   }, [isFinalizado, partido.id]);
 
@@ -54,6 +62,8 @@ export function PartidoItem({ partido }: PartidoItemProps) {
   })();
 
   const hasStats = Boolean(stats && stats.length > 0);
+  const hasPeriodos = Boolean(periodos && periodos.length > 0);
+  const hasDetails = hasStats || hasPeriodos;
 
   return (
     <div
@@ -151,8 +161,8 @@ export function PartidoItem({ partido }: PartidoItemProps) {
         </div>
       </div>
 
-      {/* Sección Colapsable: Ver Estadísticas (Solo si está finalizado y existen estadísticas) */}
-      {isFinalizado && hasStats && (
+      {/* Sección Colapsable: Ver Estadísticas / Períodos (Solo si está finalizado y existen datos) */}
+      {isFinalizado && hasDetails && (
         <div className="mt-2.5 pt-2 border-t border-border/40">
           <button
             type="button"
@@ -171,11 +181,20 @@ export function PartidoItem({ partido }: PartidoItemProps) {
           </button>
 
           {isOpen && (
-            <div className="mt-2 animate-in fade-in duration-150">
-              <PartidoEstadisticasTable
-                stats={stats!}
-                deporte={partido.deporte || "Futbol"}
-              />
+            <div className="mt-2 space-y-2.5 animate-in fade-in duration-150">
+              {hasPeriodos && (
+                <PartidoPeriodosTable
+                  periodos={periodos!}
+                  equipoLocal={partido.equipoLocal}
+                  equipoVisitante={partido.equipoVisitante}
+                />
+              )}
+              {hasStats && (
+                <PartidoEstadisticasTable
+                  stats={stats!}
+                  deporte={partido.deporte || "Futbol"}
+                />
+              )}
             </div>
           )}
         </div>

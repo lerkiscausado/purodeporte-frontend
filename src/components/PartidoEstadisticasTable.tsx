@@ -33,6 +33,7 @@ export function PartidoEstadisticasTable({
       <table className="w-full text-left text-[11px]">
         <thead className="bg-muted/60 text-[9px] uppercase tracking-wider text-muted-foreground border-b border-border/40 font-bold">
           <tr>
+            <th className="py-1.5 px-2 text-center w-8">#</th>
             <th className="py-1.5 px-2">Jugador</th>
             <th className="py-1.5 px-2">Equipo</th>
             {columns.map((col) => (
@@ -57,9 +58,13 @@ export function PartidoEstadisticasTable({
               }`.trim() || `Jugador #${jugador.id || idx + 1}`;
             const equipo = item.equipo || {};
             const eqNombre = equipo.nombre || "Equipo";
+            const numeroCamiseta = item.numeroCamiseta ?? "-";
 
             return (
               <tr key={idx} className="hover:bg-muted/40 transition-colors">
+                <td className="py-1.5 px-2 text-center font-mono font-bold text-muted-foreground text-[10px] w-8">
+                  {numeroCamiseta}
+                </td>
                 <td
                   className="py-1.5 px-2 font-bold text-foreground truncate max-w-[120px]"
                   title={jNombre}
@@ -101,6 +106,43 @@ export function PartidoEstadisticasTable({
             );
           })}
         </tbody>
+        <tfoot className="border-t-2 border-border/60 bg-muted/40 font-bold">
+          <tr>
+            <td className="py-1.5 px-2 text-center text-muted-foreground text-[10px] w-8"></td>
+            <td className="py-1.5 px-2 font-black text-foreground uppercase tracking-tight text-[11px]">
+              TOTAL
+            </td>
+            <td className="py-1.5 px-2"></td>
+            {columns.map((col) => {
+              if (col.isPoints) {
+                const totalPts = stats.reduce(
+                  (sum: number, item: any) => sum + (Number(item.totalPuntos) || 0),
+                  0
+                );
+                return (
+                  <td
+                    key={col.key}
+                    className="py-1.5 px-2 text-right font-black font-mono text-primary text-[10px]"
+                  >
+                    {totalPts}
+                  </td>
+                );
+              }
+              const totalCol = stats.reduce(
+                (sum: number, item: any) => sum + getStatQuantity(item, col),
+                0
+              );
+              return (
+                <td
+                  key={col.key}
+                  className="py-1.5 px-2 text-center font-black font-mono text-foreground text-[10px]"
+                >
+                  {totalCol}
+                </td>
+              );
+            })}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );

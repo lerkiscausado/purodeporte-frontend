@@ -7,7 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { PartidoEstadisticasTable } from "@/components/PartidoEstadisticasTable";
+import { PartidoPeriodosTable } from "@/components/PartidoPeriodosTable";
 import { getEstadisticasPorPartido } from "@/app/actions/estadisticas";
+import { getPeriodosPublicosPorPartido } from "@/app/actions/partidoperiodos";
 import {
   FaChartLine,
   FaChartBar,
@@ -54,19 +56,24 @@ function getSportIcon(deporte?: string) {
 }
 
 /**
- * Componente individual de Tarjeta de Resultado con sección colapsable de Estadísticas
+ * Componente individual de Tarjeta de Resultado con sección colapsable de Estadísticas y Períodos
  */
 function ResultadoCardItem({ partido }: { partido: Partido }) {
   const isFinalizado = partido.estado === "Finalizado";
   const [stats, setStats] = useState<any[] | null>(null);
+  const [periodos, setPeriodos] = useState<any[] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (isFinalizado && partido.id) {
       let isMounted = true;
-      getEstadisticasPorPartido(Number(partido.id)).then((res) => {
+      Promise.all([
+        getEstadisticasPorPartido(Number(partido.id)),
+        getPeriodosPublicosPorPartido(Number(partido.id)),
+      ]).then(([statsRes, periodosRes]) => {
         if (isMounted) {
-          setStats(Array.isArray(res) ? res : []);
+          setStats(Array.isArray(statsRes) ? statsRes : []);
+          setPeriodos(Array.isArray(periodosRes) ? periodosRes : []);
         }
       });
       return () => {
@@ -74,10 +81,13 @@ function ResultadoCardItem({ partido }: { partido: Partido }) {
       };
     } else {
       setStats(null);
+      setPeriodos(null);
     }
   }, [isFinalizado, partido.id]);
 
   const hasStats = Boolean(stats && stats.length > 0);
+  const hasPeriodos = Boolean(periodos && periodos.length > 0);
+  const hasDetails = hasStats || hasPeriodos;
 
   const localWins =
     partido.marcadorLocal != null &&
@@ -208,8 +218,8 @@ function ResultadoCardItem({ partido }: { partido: Partido }) {
           )}
         </div>
 
-        {/* Sección Colapsable: Ver Estadísticas (Solo si está finalizado y existen estadísticas) */}
-        {isFinalizado && hasStats && (
+        {/* Sección Colapsable: Ver Estadísticas / Períodos (Solo si está finalizado y existen datos) */}
+        {isFinalizado && hasDetails && (
           <div className="pt-2.5 border-t border-border/40 mt-2">
             <button
               type="button"
@@ -228,11 +238,20 @@ function ResultadoCardItem({ partido }: { partido: Partido }) {
             </button>
 
             {isOpen && (
-              <div className="mt-2 animate-in fade-in duration-150">
-                <PartidoEstadisticasTable
-                  stats={stats!}
-                  deporte={partido.deporte || "Futbol"}
-                />
+              <div className="mt-2 space-y-2.5 animate-in fade-in duration-150">
+                {hasPeriodos && (
+                  <PartidoPeriodosTable
+                    periodos={periodos!}
+                    equipoLocal={partido.equipoLocal}
+                    equipoVisitante={partido.equipoVisitante}
+                  />
+                )}
+                {hasStats && (
+                  <PartidoEstadisticasTable
+                    stats={stats!}
+                    deporte={partido.deporte || "Futbol"}
+                  />
+                )}
               </div>
             )}
           </div>
@@ -243,7 +262,7 @@ function ResultadoCardItem({ partido }: { partido: Partido }) {
 }
 
 /**
- * Componente individual de Fila de Tabla con fila expandible de Estadísticas
+ * Componente individual de Fila de Tabla con fila expandible de Estadísticas y Períodos
  */
 function ResultadoTableRowItem({
   partido,
@@ -254,14 +273,19 @@ function ResultadoTableRowItem({
 }) {
   const isFinalizado = partido.estado === "Finalizado";
   const [stats, setStats] = useState<any[] | null>(null);
+  const [periodos, setPeriodos] = useState<any[] | null>(null);
   const [isOpen, setIsOpen] = useState(false);
 
   useEffect(() => {
     if (isFinalizado && partido.id) {
       let isMounted = true;
-      getEstadisticasPorPartido(Number(partido.id)).then((res) => {
+      Promise.all([
+        getEstadisticasPorPartido(Number(partido.id)),
+        getPeriodosPublicosPorPartido(Number(partido.id)),
+      ]).then(([statsRes, periodosRes]) => {
         if (isMounted) {
-          setStats(Array.isArray(res) ? res : []);
+          setStats(Array.isArray(statsRes) ? statsRes : []);
+          setPeriodos(Array.isArray(periodosRes) ? periodosRes : []);
         }
       });
       return () => {
@@ -269,10 +293,13 @@ function ResultadoTableRowItem({
       };
     } else {
       setStats(null);
+      setPeriodos(null);
     }
   }, [isFinalizado, partido.id]);
 
   const hasStats = Boolean(stats && stats.length > 0);
+  const hasPeriodos = Boolean(periodos && periodos.length > 0);
+  const hasDetails = hasStats || hasPeriodos;
 
   const localWins =
     partido.marcadorLocal != null &&
@@ -395,7 +422,7 @@ function ResultadoTableRowItem({
             >
               {isFinalizado ? "Final" : partido.estado}
             </Badge>
-            {isFinalizado && hasStats && (
+            {isFinalizado && hasDetails && (
               <button
                 type="button"
                 onClick={() => setIsOpen(!isOpen)}
@@ -409,14 +436,23 @@ function ResultadoTableRowItem({
           </div>
         </td>
       </tr>
-      {isFinalizado && hasStats && isOpen && (
+      {isFinalizado && hasDetails && isOpen && (
         <tr className="bg-muted/10 border-b border-border/40">
           <td colSpan={9} className="p-3">
-            <div className="animate-in fade-in duration-150">
-              <PartidoEstadisticasTable
-                stats={stats!}
-                deporte={partido.deporte || "Futbol"}
-              />
+            <div className="space-y-2.5 animate-in fade-in duration-150">
+              {hasPeriodos && (
+                <PartidoPeriodosTable
+                  periodos={periodos!}
+                  equipoLocal={partido.equipoLocal}
+                  equipoVisitante={partido.equipoVisitante}
+                />
+              )}
+              {hasStats && (
+                <PartidoEstadisticasTable
+                  stats={stats!}
+                  deporte={partido.deporte || "Futbol"}
+                />
+              )}
             </div>
           </td>
         </tr>
