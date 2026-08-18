@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
 import { PartidoEstadisticasTable } from "@/components/PartidoEstadisticasTable";
 import { PartidoPeriodosTable } from "@/components/PartidoPeriodosTable";
+import { DatePickerStrip } from "@/components/DatePickerStrip";
 import { getEstadisticasPorPartido } from "@/app/actions/estadisticas";
 import { getPeriodosPublicosPorPartido } from "@/app/actions/partidoperiodos";
 import {
@@ -461,15 +462,39 @@ function ResultadoTableRowItem({
   );
 }
 
+function isSameDay(date1: Date, date2: Date) {
+  return (
+    date1.getDate() === date2.getDate() &&
+    date1.getMonth() === date2.getMonth() &&
+    date1.getFullYear() === date2.getFullYear()
+  );
+}
+
 export function ResultadosPublicListClient({ initialResultados }: ResultadosPublicListClientProps) {
   const [viewMode, setViewMode] = useState<"cards" | "table">("cards");
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
+  const [torneoFilter, setTorneoFilter] = useState("all");
   const [ramaFilter, setRamaFilter] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
 
   // Extraer deportes y ramas únicas existentes
   const sports = ["all", ...Array.from(new Set(initialResultados.map((p) => p.deporte).filter(Boolean)))];
   const ramas = ["all", ...Array.from(new Set(initialResultados.map((p) => p.categoria).filter(Boolean)))];
+
+  // Derivar lista de torneos únicos presentes en initialResultados
+  const torneosMap = new Map<string, string>();
+  initialResultados.forEach((p) => {
+    if (p.torneoId) {
+      const idStr = String(p.torneoId);
+      if (!torneosMap.has(idStr)) {
+        torneosMap.set(idStr, p.torneoNombre || `Torneo #${idStr}`);
+      }
+    }
+  });
+  const torneos = Array.from(torneosMap.entries())
+    .map(([id, nombre]) => ({ id, nombre }))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre));
 
   // Filtrar resultados
   const filteredResultados = initialResultados.filter((partido) => {
@@ -490,13 +515,45 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
       categoriaName.toLowerCase().includes(term);
 
     const matchesSport = sportFilter === "all" || partido.deporte === sportFilter;
+    const matchesTorneo = torneoFilter === "all" || String(partido.torneoId) === torneoFilter;
     const matchesRama = ramaFilter === "all" || partido.categoria === ramaFilter;
+    const matchesDate = !selectedDate || isSameDay(new Date(partido.fecha), selectedDate);
 
-    return matchesSearch && matchesSport && matchesRama;
+    return matchesSearch && matchesSport && matchesTorneo && matchesRama && matchesDate;
   });
 
   return (
     <div className="space-y-6">
+      {/* Selector de fecha con DatePickerStrip */}
+      <div className="space-y-2">
+        <DatePickerStrip
+          selectedDate={selectedDate ?? new Date()}
+          onChange={setSelectedDate}
+        />
+        {selectedDate !== null && (
+          <div className="flex items-center justify-between px-1 text-xs">
+            <span className="text-muted-foreground">
+              Filtrando por fecha:{" "}
+              <strong className="text-foreground">
+                {selectedDate.toLocaleDateString("es-CO", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(null)}
+              className="font-bold text-primary hover:text-primary/80 hover:underline transition-colors cursor-pointer"
+            >
+              Quitar filtro de fecha (Ver todos)
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Controles de Búsqueda, Filtros y Selección de Vista */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-card p-4 rounded-sm border border-border/60 shadow-sm">
         {/* Campo de Búsqueda y Selectores */}
@@ -521,6 +578,21 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
               {sports.filter((s) => s !== "all").map((sport) => (
                 <option key={sport} value={sport}>
                   {String(sport).toUpperCase()}
+                </option>
+              ))}
+            </select>
+          )}
+
+          {torneos.length > 0 && (
+            <select
+              value={torneoFilter}
+              onChange={(e) => setTorneoFilter(e.target.value)}
+              className="h-10 px-3 bg-card border border-border/60 rounded-sm text-xs font-bold focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary uppercase tracking-wider shrink-0"
+            >
+              <option value="all">Todos los torneos</option>
+              {torneos.map((torneo) => (
+                <option key={torneo.id} value={torneo.id}>
+                  {torneo.nombre.toUpperCase()}
                 </option>
               ))}
             </select>
