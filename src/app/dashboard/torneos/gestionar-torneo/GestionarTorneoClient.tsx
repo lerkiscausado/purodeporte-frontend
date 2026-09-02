@@ -28,7 +28,7 @@ import {
   FaEdit,
 } from "react-icons/fa";
 import { DatePickerStrip } from "@/components/DatePickerStrip";
-import { getInscripcionesPorTorneo, deleteInscripcion } from "@/app/actions/inscripciones";
+import { getInscripcionesPorTorneo, deleteInscripcion, updateInscripcion } from "@/app/actions/inscripciones";
 import { cn } from "@/lib/utils";
 import { getUploadUrl } from "@/lib/uploads";
 import { CancelarPartidoModal } from "@/components/CancelarPartidoModal";
@@ -153,6 +153,21 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
     } catch (err) {
       console.error("Error al eliminar inscripción:", err);
       alert("Error al eliminar la inscripción.");
+    }
+  };
+
+  // Manejar cambio de grupo de una inscripción
+  const handleGrupoChange = async (inscripcionId: number, nuevoGrupo: string) => {
+    try {
+      const res = await updateInscripcion(inscripcionId, { grupo: nuevoGrupo || null });
+      if (res.error) {
+        alert(res.error);
+      } else {
+        await loadInscripciones();
+      }
+    } catch (err) {
+      console.error("Error al actualizar grupo:", err);
+      alert("Error al actualizar el grupo.");
     }
   };
 
@@ -531,23 +546,25 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                 </div>
               ) : (
                 (() => {
-                  const sortedInscripciones = [...inscripciones].sort((a, b) => {
-                    const ptsDiff = (b.puntos ?? 0) - (a.puntos ?? 0);
-                    if (ptsDiff !== 0) return ptsDiff;
-                    
-                    const difDiff = (b.diferencia ?? 0) - (a.diferencia ?? 0);
-                    if (difDiff !== 0) return difDiff;
-                    
-                    return (b.puntosFavor ?? 0) - (a.puntosFavor ?? 0);
-                  });
+                  const sortInscripciones = (list: any[]) =>
+                    [...list].sort((a, b) => {
+                      const ptsDiff = (b.puntos ?? 0) - (a.puntos ?? 0);
+                      if (ptsDiff !== 0) return ptsDiff;
+                      const difDiff = (b.diferencia ?? 0) - (a.diferencia ?? 0);
+                      if (difDiff !== 0) return difDiff;
+                      return (b.puntosFavor ?? 0) - (a.puntosFavor ?? 0);
+                    });
 
-                  return (
+                  const tieneGrupos = inscripciones.some((i) => i.grupo);
+
+                  const renderTablaInscripciones = (lista: any[], posOffset = 0) => (
                     <div className="overflow-x-auto">
                       <table className="w-full text-sm">
                         <thead>
                           <tr className="border-b border-border/60 bg-muted/5 text-[10px] font-black uppercase tracking-widest text-muted-foreground">
                             <th className="text-center px-4 py-3">Posición</th>
                             <th className="text-left px-6 py-3">Nombre del Equipo</th>
+                            <th className="text-center px-3 py-3 text-violet-400" title="Grupo">Grupo</th>
                             <th className="text-left px-6 py-3">Delegado</th>
                             <th className="text-left px-6 py-3">Contacto</th>
                             <th className="text-center px-3 py-3 text-foreground/80" title="Partidos Jugados">PJ</th>
@@ -565,14 +582,14 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                           </tr>
                         </thead>
                         <tbody>
-                          {sortedInscripciones.map((insc, idx) => (
+                          {lista.map((insc, idx) => (
                             <tr key={insc.id || idx} className="border-b border-border/40 hover:bg-muted/10 transition-colors">
                               <td className="px-4 py-3.5 text-center">
                                 <span className={cn(
                                   "inline-flex items-center justify-center h-6 w-6 rounded-full text-[10px] font-black",
-                                  idx === 0 ? "bg-amber-500/20 text-amber-500 border border-amber-500/30" :
-                                  idx === 1 ? "bg-slate-400/20 text-slate-400 border border-slate-400/30" :
-                                  idx === 2 ? "bg-orange-600/20 text-orange-500 border border-orange-600/30" :
+                                  idx + posOffset === 0 ? "bg-amber-500/20 text-amber-500 border border-amber-500/30" :
+                                  idx + posOffset === 1 ? "bg-slate-400/20 text-slate-400 border border-slate-400/30" :
+                                  idx + posOffset === 2 ? "bg-orange-600/20 text-orange-500 border border-orange-600/30" :
                                   "text-muted-foreground/60"
                                 )}>
                                   {idx + 1}
@@ -593,6 +610,21 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                                   )}
                                   <span className="truncate">{insc.equipo?.nombre || "Equipo sin nombre"}</span>
                                 </div>
+                              </td>
+                              {/* Columna Grupo: select editable */}
+                              <td className="px-3 py-3.5 text-center">
+                                <select
+                                  value={insc.grupo || ""}
+                                  onChange={(e) => handleGrupoChange(insc.id, e.target.value)}
+                                  className="h-7 bg-card border border-border/60 rounded-sm text-[10px] font-bold px-1.5 text-foreground focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer min-w-[70px]"
+                                  title="Asignar grupo"
+                                >
+                                  <option value="">Sin grupo</option>
+                                  <option value="A">A</option>
+                                  <option value="B">B</option>
+                                  <option value="C">C</option>
+                                  <option value="D">D</option>
+                                </select>
                               </td>
                               <td className="px-6 py-3.5 text-xs text-muted-foreground">{insc.equipo?.representante || "—"}</td>
                               <td className="px-6 py-3.5 text-xs text-muted-foreground">
@@ -621,7 +653,6 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                                 {(insc.diferencia ?? 0) > 0 ? `+${insc.diferencia}` : insc.diferencia ?? 0}
                               </td>
                               <td className="px-3 py-3.5 text-center font-black text-xs text-primary bg-primary/5">{insc.puntos ?? 0}</td>
-                              
                               <td className="px-6 py-3.5 text-center">
                                 <span className="inline-flex px-2 py-0.5 rounded-sm border text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-500 border-green-500/20">
                                   {insc.estado || "Activo"}
@@ -652,6 +683,50 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                           ))}
                         </tbody>
                       </table>
+                    </div>
+                  );
+
+                  if (!tieneGrupos) {
+                    return renderTablaInscripciones(sortInscripciones(inscripciones));
+                  }
+
+                  // Agrupar por grupo A→B→C→D→Sin Grupo
+                  const GRUPOS_ORDEN = ["A", "B", "C", "D"];
+                  const grupos: Record<string, any[]> = {};
+                  for (const insc of inscripciones) {
+                    const key = insc.grupo || "__sin_grupo__";
+                    if (!grupos[key]) grupos[key] = [];
+                    grupos[key].push(insc);
+                  }
+
+                  const gruposOrdenados = [
+                    ...GRUPOS_ORDEN.filter((g) => grupos[g]),
+                    ...(grupos["__sin_grupo__"] ? ["__sin_grupo__"] : []),
+                  ];
+
+                  return (
+                    <div className="space-y-0">
+                      {gruposOrdenados.map((grupoKey) => (
+                        <div key={grupoKey}>
+                          <div className="px-6 py-2.5 bg-muted/30 border-b border-border/40 flex items-center gap-2">
+                            <span className={cn(
+                              "inline-flex items-center justify-center h-5 w-5 rounded-sm text-[10px] font-black",
+                              grupoKey === "__sin_grupo__"
+                                ? "bg-muted-foreground/20 text-muted-foreground"
+                                : "bg-violet-500/20 text-violet-400"
+                            )}>
+                              {grupoKey === "__sin_grupo__" ? "—" : grupoKey}
+                            </span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                              {grupoKey === "__sin_grupo__" ? "Sin Grupo" : `Grupo ${grupoKey}`}
+                            </span>
+                            <span className="ml-auto text-[10px] text-muted-foreground/60 font-semibold">
+                              {grupos[grupoKey].length} {grupos[grupoKey].length === 1 ? "equipo" : "equipos"}
+                            </span>
+                          </div>
+                          {renderTablaInscripciones(sortInscripciones(grupos[grupoKey]))}
+                        </div>
+                      ))}
                     </div>
                   );
                 })()

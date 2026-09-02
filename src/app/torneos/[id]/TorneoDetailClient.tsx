@@ -281,60 +281,115 @@ export function TorneoDetailClient({
               Aún no hay equipos inscritos en este torneo.
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs">
-                <thead className="bg-muted/50 uppercase tracking-wider text-[10px] font-bold text-muted-foreground border-b border-border/60">
-                  <tr>
-                    <th className="py-3 px-3 text-center w-10">#</th>
-                    <th className="py-3 px-4">Equipo</th>
-                    <th className="py-3 px-2 text-center" title="Partidos Jugados">PJ</th>
-                    <th className="py-3 px-2 text-center" title="Partidos Ganados">PG</th>
-                    <th className="py-3 px-2 text-center" title="Partidos Empatados">PE</th>
-                    <th className="py-3 px-2 text-center" title="Partidos Perdidos">PP</th>
-                    <th className="py-3 px-2 text-center" title="Puntos / Goles a Favor">PF</th>
-                    <th className="py-3 px-2 text-center" title="Puntos / Goles en Contra">PC</th>
-                    <th className="py-3 px-2 text-center" title="Diferencia">DIF</th>
-                    <th className="py-3 px-3 text-center bg-primary/10 text-primary font-black" title="Puntos Totales">PTS</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border/40 font-medium">
-                  {inscripciones.map((item, idx) => {
-                    const equipo = item.equipo || {};
-                    const nombreEquipo = equipo.nombre || "Equipo";
-                    const fotoEquipo = equipo.foto || equipo.escudo || null;
+            (() => {
+              const sortInscripciones = (list: any[]) =>
+                [...list].sort((a, b) => {
+                  const ptsDiff = (b.puntos ?? 0) - (a.puntos ?? 0);
+                  if (ptsDiff !== 0) return ptsDiff;
+                  const difDiff = (b.diferencia ?? 0) - (a.diferencia ?? 0);
+                  if (difDiff !== 0) return difDiff;
+                  return (b.puntosFavor ?? 0) - (a.puntosFavor ?? 0);
+                });
 
-                    return (
-                      <tr key={item.id || idx} className="hover:bg-muted/30 transition-colors">
-                        <td className="py-3 px-3 text-center font-bold text-muted-foreground">
-                          {idx + 1}
-                        </td>
-                        <td className="py-3 px-4">
-                          <div className="flex items-center gap-2.5">
-                            <EquipoAvatar nombre={nombreEquipo} foto={fotoEquipo} size="sm" />
-                            <span className="font-bold text-foreground text-xs uppercase truncate max-w-[200px]" title={nombreEquipo}>
-                              {nombreEquipo}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="py-3 px-2 text-center">{item.partidosJugados ?? 0}</td>
-                        <td className="py-3 px-2 text-center">{item.partidosGanados ?? 0}</td>
-                        <td className="py-3 px-2 text-center">{item.partidosEmpatados ?? 0}</td>
-                        <td className="py-3 px-2 text-center">{item.partidosPerdidos ?? 0}</td>
-                        <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosFavor ?? 0}</td>
-                        <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosContra ?? 0}</td>
-                        <td className={`py-3 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? "text-emerald-500" : (item.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"}`}>
-                          {(item.diferencia ?? 0) > 0 ? `+${item.diferencia}` : item.diferencia ?? 0}
-                        </td>
-                        <td className="py-3 px-3 text-center bg-primary/5 text-primary font-black text-sm">
-                          {item.puntos ?? 0}
-                        </td>
+              const tieneGrupos = inscripciones.some((i: any) => i.grupo);
+
+              const renderTabla = (lista: any[]) => (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-muted/50 uppercase tracking-wider text-[10px] font-bold text-muted-foreground border-b border-border/60">
+                      <tr>
+                        <th className="py-3 px-3 text-center w-10">#</th>
+                        <th className="py-3 px-4">Equipo</th>
+                        <th className="py-3 px-2 text-center" title="Partidos Jugados">PJ</th>
+                        <th className="py-3 px-2 text-center" title="Partidos Ganados">PG</th>
+                        <th className="py-3 px-2 text-center" title="Partidos Empatados">PE</th>
+                        <th className="py-3 px-2 text-center" title="Partidos Perdidos">PP</th>
+                        <th className="py-3 px-2 text-center" title="Puntos / Goles a Favor">PF</th>
+                        <th className="py-3 px-2 text-center" title="Puntos / Goles en Contra">PC</th>
+                        <th className="py-3 px-2 text-center" title="Diferencia">DIF</th>
+                        <th className="py-3 px-3 text-center bg-primary/10 text-primary font-black" title="Puntos Totales">PTS</th>
                       </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
+                    </thead>
+                    <tbody className="divide-y divide-border/40 font-medium">
+                      {lista.map((item: any, idx: number) => {
+                        const equipo = item.equipo || {};
+                        const nombreEquipo = equipo.nombre || "Equipo";
+                        const fotoEquipo = equipo.foto || equipo.escudo || null;
+
+                        return (
+                          <tr key={item.id || idx} className="hover:bg-muted/30 transition-colors">
+                            <td className="py-3 px-3 text-center font-bold text-muted-foreground">
+                              {idx + 1}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-2.5">
+                                <EquipoAvatar nombre={nombreEquipo} foto={fotoEquipo} size="sm" />
+                                <span className="font-bold text-foreground text-xs uppercase truncate max-w-[200px]" title={nombreEquipo}>
+                                  {nombreEquipo}
+                                </span>
+                              </div>
+                            </td>
+                            <td className="py-3 px-2 text-center">{item.partidosJugados ?? 0}</td>
+                            <td className="py-3 px-2 text-center">{item.partidosGanados ?? 0}</td>
+                            <td className="py-3 px-2 text-center">{item.partidosEmpatados ?? 0}</td>
+                            <td className="py-3 px-2 text-center">{item.partidosPerdidos ?? 0}</td>
+                            <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosFavor ?? 0}</td>
+                            <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosContra ?? 0}</td>
+                            <td className={`py-3 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? "text-emerald-500" : (item.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"}`}>
+                              {(item.diferencia ?? 0) > 0 ? `+${item.diferencia}` : item.diferencia ?? 0}
+                            </td>
+                            <td className="py-3 px-3 text-center bg-primary/5 text-primary font-black text-sm">
+                              {item.puntos ?? 0}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              );
+
+              if (!tieneGrupos) {
+                return renderTabla(sortInscripciones(inscripciones));
+              }
+
+              // Agrupar por grupo A→B→C→D→Sin Grupo
+              const GRUPOS_ORDEN = ["A", "B", "C", "D"];
+              const grupos: Record<string, any[]> = {};
+              for (const insc of inscripciones) {
+                const key = (insc as any).grupo || "__sin_grupo__";
+                if (!grupos[key]) grupos[key] = [];
+                grupos[key].push(insc);
+              }
+
+              const gruposOrdenados = [
+                ...GRUPOS_ORDEN.filter((g) => grupos[g]),
+                ...(grupos["__sin_grupo__"] ? ["__sin_grupo__"] : []),
+              ];
+
+              return (
+                <div className="space-y-0">
+                  {gruposOrdenados.map((grupoKey) => (
+                    <div key={grupoKey}>
+                      <div className="px-4 py-2.5 bg-muted/30 border-b border-border/40 flex items-center gap-2">
+                        <span className={`inline-flex items-center justify-center h-5 w-5 rounded-sm text-[10px] font-black ${grupoKey === "__sin_grupo__" ? "bg-muted-foreground/20 text-muted-foreground" : "bg-violet-500/20 text-violet-400"}`}>
+                          {grupoKey === "__sin_grupo__" ? "—" : grupoKey}
+                        </span>
+                        <span className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">
+                          {grupoKey === "__sin_grupo__" ? "Sin Grupo" : `Grupo ${grupoKey}`}
+                        </span>
+                        <span className="ml-auto text-[10px] text-muted-foreground/60 font-semibold">
+                          {grupos[grupoKey].length} {grupos[grupoKey].length === 1 ? "equipo" : "equipos"}
+                        </span>
+                      </div>
+                      {renderTabla(sortInscripciones(grupos[grupoKey]))}
+                    </div>
+                  ))}
+                </div>
+              );
+            })()
           )}
+
         </div>
       )}
 
