@@ -582,6 +582,7 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                               <>
                                 <th className="text-center px-3 py-3 text-cyan-400" title="Puntos totales anotados en todos los sets">Pts+</th>
                                 <th className="text-center px-3 py-3 text-rose-400" title="Puntos totales recibidos en todos los sets">Pts-</th>
+                                <th className="text-center px-3 py-3 text-muted-foreground" title="Diferencia de puntos totales en todos los sets">Dif. Pts</th>
                               </>
                             )}
                             <th className="text-center px-3 py-3" title="Diferencia de Puntos/Goles">DG</th>
@@ -655,12 +656,21 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                               <td className="px-3 py-3.5 text-center font-bold text-xs text-rose-500">{insc.partidosPerdidos ?? 0}</td>
                               <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosFavor ?? 0}</td>
                               <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosContra ?? 0}</td>
-                              {isVoleibol && (
-                                <>
-                                  <td className="px-3 py-3.5 text-center font-semibold text-xs text-cyan-400">{insc.puntosAnotados ?? 0}</td>
-                                  <td className="px-3 py-3.5 text-center font-semibold text-xs text-rose-400">{insc.puntosRecibidos ?? 0}</td>
-                                </>
-                              )}
+                              {isVoleibol && (() => {
+                                const difPuntos = (insc.puntosAnotados ?? 0) - (insc.puntosRecibidos ?? 0);
+                                return (
+                                  <>
+                                    <td className="px-3 py-3.5 text-center font-semibold text-xs text-cyan-400">{insc.puntosAnotados ?? 0}</td>
+                                    <td className="px-3 py-3.5 text-center font-semibold text-xs text-rose-400">{insc.puntosRecibidos ?? 0}</td>
+                                    <td className={cn(
+                                      "px-3 py-3.5 text-center font-black text-xs",
+                                      difPuntos > 0 ? "text-emerald-500" : difPuntos < 0 ? "text-rose-500" : "text-muted-foreground"
+                                    )}>
+                                      {difPuntos > 0 ? `+${difPuntos}` : difPuntos}
+                                    </td>
+                                  </>
+                                );
+                              })()}
                               <td className={cn(
                                 "px-3 py-3.5 text-center font-black text-xs",
                                 (insc.diferencia ?? 0) > 0 ? "text-emerald-500" : (insc.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"

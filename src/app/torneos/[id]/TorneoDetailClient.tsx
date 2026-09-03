@@ -317,6 +317,7 @@ export function TorneoDetailClient({
                           <>
                             <th className="py-3 px-2 text-center text-cyan-400" title="Puntos totales anotados en todos los sets">Pts+</th>
                             <th className="py-3 px-2 text-center text-rose-400" title="Puntos totales recibidos en todos los sets">Pts-</th>
+                            <th className="py-3 px-2 text-center" title="Diferencia de puntos totales en todos los sets">Dif. Pts</th>
                           </>
                         )}
                         <th className="py-3 px-2 text-center" title="Diferencia">DIF</th>
@@ -350,12 +351,20 @@ export function TorneoDetailClient({
                             <td className="py-3 px-2 text-center">{item.partidosPerdidos ?? 0}</td>
                             <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosFavor ?? 0}</td>
                             <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosContra ?? 0}</td>
-                            {isVoleibol && (
-                              <>
-                                <td className="py-3 px-2 text-center text-cyan-400 font-semibold">{item.puntosAnotados ?? 0}</td>
-                                <td className="py-3 px-2 text-center text-rose-400 font-semibold">{item.puntosRecibidos ?? 0}</td>
-                              </>
-                            )}
+                            {isVoleibol && (() => {
+                              const difPuntos = (item.puntosAnotados ?? 0) - (item.puntosRecibidos ?? 0);
+                              return (
+                                <>
+                                  <td className="py-3 px-2 text-center text-cyan-400 font-semibold">{item.puntosAnotados ?? 0}</td>
+                                  <td className="py-3 px-2 text-center text-rose-400 font-semibold">{item.puntosRecibidos ?? 0}</td>
+                                  <td className={`py-3 px-2 text-center font-black ${
+                                    difPuntos > 0 ? "text-emerald-500" : difPuntos < 0 ? "text-rose-500" : "text-muted-foreground"
+                                  }`}>
+                                    {difPuntos > 0 ? `+${difPuntos}` : difPuntos}
+                                  </td>
+                                </>
+                              );
+                            })()}
                             <td className={`py-3 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? "text-emerald-500" : (item.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"}`}>
                               {(item.diferencia ?? 0) > 0 ? `+${item.diferencia}` : item.diferencia ?? 0}
                             </td>
