@@ -16,6 +16,13 @@ const DEPORTE_FILTERS = [
   { label: "Voleibol", value: "Voleibol", icon: FaVolleyballBall, color: "text-indigo-500" },
 ];
 
+const DEPORTE_EMOJIS: Record<string, string> = {
+  Todas: "📰",
+  "Fútbol": "⚽",
+  Baloncesto: "🏀",
+  Voleibol: "🏐",
+};
+
 export function NoticiasPublicListClient({ initialNoticias }: NoticiasPublicListClientProps) {
   const [deporteFilter, setDeporteFilter] = useState("Todas");
 
@@ -30,10 +37,13 @@ export function NoticiasPublicListClient({ initialNoticias }: NoticiasPublicList
     return noticiaDep === filterDep || noticiaDep.includes(filterDep);
   });
 
+  const activeChip = DEPORTE_FILTERS.find((c) => c.value === deporteFilter) ?? DEPORTE_FILTERS[0];
+  const ActiveIcon = activeChip.icon;
+
   return (
     <div className="space-y-6">
-      {/* Chips / Tabs de Filtro por Deporte */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+      {/* Chips — solo desktop (md+) */}
+      <div className="hidden md:flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
         {DEPORTE_FILTERS.map((chip) => {
           const Icon = chip.icon;
           const isSelected = deporteFilter === chip.value;
@@ -54,6 +64,24 @@ export function NoticiasPublicListClient({ initialNoticias }: NoticiasPublicList
             </button>
           );
         })}
+      </div>
+
+      {/* Select nativo — solo móvil (< md) */}
+      <div className="relative md:hidden">
+        <ActiveIcon
+          className={`absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 pointer-events-none ${activeChip.color}`}
+        />
+        <select
+          value={deporteFilter}
+          onChange={(e) => setDeporteFilter(e.target.value)}
+          className={`w-full h-10 bg-card border border-border/60 rounded-sm text-xs font-bold uppercase tracking-wider pl-8 pr-4 focus:outline-none focus:ring-1 focus:ring-primary cursor-pointer appearance-none ${activeChip.color}`}
+        >
+          {DEPORTE_FILTERS.map((chip) => (
+            <option key={chip.value} value={chip.value}>
+              {DEPORTE_EMOJIS[chip.value] ?? ""} {chip.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       {/* Lista de Noticias o Estado Vacío */}
