@@ -50,6 +50,9 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                    torneo.deporte?.toLowerCase().includes("golito") ||
                    torneo.deporte?.toLowerCase().includes("microfutbol");
 
+  const isVoleibol = torneo.deporte?.toLowerCase().includes("voley") ||
+                    torneo.deporte?.toLowerCase().includes("voleibol");
+
   const [activeTab, setActiveTab] = useState<"partidos" | "equipos" | "resumen">("partidos");
 
   // Estados para la edición del torneo
@@ -573,8 +576,14 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                               <th className="text-center px-3 py-3 text-amber-500/80" title="Partidos Empatados">PE</th>
                             )}
                             <th className="text-center px-3 py-3 text-rose-500/80" title="Partidos Perdidos">PP</th>
-                            <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles a Favor">PF</th>
-                            <th className="text-center px-3 py-3 text-muted-foreground" title="Puntos/Goles en Contra">PC</th>
+                            <th className="text-center px-3 py-3 text-muted-foreground" title={isVoleibol ? "Sets a favor" : "Puntos/Goles a Favor"}>PF</th>
+                            <th className="text-center px-3 py-3 text-muted-foreground" title={isVoleibol ? "Sets en contra" : "Puntos/Goles en Contra"}>PC</th>
+                            {isVoleibol && (
+                              <>
+                                <th className="text-center px-3 py-3 text-cyan-400" title="Puntos totales anotados en todos los sets">Pts+</th>
+                                <th className="text-center px-3 py-3 text-rose-400" title="Puntos totales recibidos en todos los sets">Pts-</th>
+                              </>
+                            )}
                             <th className="text-center px-3 py-3" title="Diferencia de Puntos/Goles">DG</th>
                             <th className="text-center px-3 py-3 text-primary font-black bg-primary/5" title="Puntos Totales">PTS</th>
                             <th className="text-center px-6 py-3">Estado</th>
@@ -646,6 +655,12 @@ export function GestionarTorneoClient({ torneo, partidos, baseUrl }: GestionarTo
                               <td className="px-3 py-3.5 text-center font-bold text-xs text-rose-500">{insc.partidosPerdidos ?? 0}</td>
                               <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosFavor ?? 0}</td>
                               <td className="px-3 py-3.5 text-center font-semibold text-xs text-muted-foreground/90">{insc.puntosContra ?? 0}</td>
+                              {isVoleibol && (
+                                <>
+                                  <td className="px-3 py-3.5 text-center font-semibold text-xs text-cyan-400">{insc.puntosAnotados ?? 0}</td>
+                                  <td className="px-3 py-3.5 text-center font-semibold text-xs text-rose-400">{insc.puntosRecibidos ?? 0}</td>
+                                </>
+                              )}
                               <td className={cn(
                                 "px-3 py-3.5 text-center font-black text-xs",
                                 (insc.diferencia ?? 0) > 0 ? "text-emerald-500" : (insc.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"

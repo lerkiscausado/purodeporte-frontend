@@ -127,6 +127,11 @@ export function TorneoDetailClient({
       torneo.deporte?.toLowerCase().includes("golito")
   );
 
+  const isVoleibol = Boolean(
+    torneo.deporte?.toLowerCase().includes("voley") ||
+      torneo.deporte?.toLowerCase().includes("voleibol")
+  );
+
   // Cargar catálogo de tipos de estadística si es fútbol
   useEffect(() => {
     if (isFutbol) {
@@ -302,10 +307,18 @@ export function TorneoDetailClient({
                         <th className="py-3 px-4">Equipo</th>
                         <th className="py-3 px-2 text-center" title="Partidos Jugados">PJ</th>
                         <th className="py-3 px-2 text-center" title="Partidos Ganados">PG</th>
-                        <th className="py-3 px-2 text-center" title="Partidos Empatados">PE</th>
+                        {!isVoleibol && (
+                          <th className="py-3 px-2 text-center" title="Partidos Empatados">PE</th>
+                        )}
                         <th className="py-3 px-2 text-center" title="Partidos Perdidos">PP</th>
-                        <th className="py-3 px-2 text-center" title="Puntos / Goles a Favor">PF</th>
-                        <th className="py-3 px-2 text-center" title="Puntos / Goles en Contra">PC</th>
+                        <th className="py-3 px-2 text-center" title={isVoleibol ? "Sets a favor" : "Puntos / Goles a Favor"}>PF</th>
+                        <th className="py-3 px-2 text-center" title={isVoleibol ? "Sets en contra" : "Puntos / Goles en Contra"}>PC</th>
+                        {isVoleibol && (
+                          <>
+                            <th className="py-3 px-2 text-center text-cyan-400" title="Puntos totales anotados en todos los sets">Pts+</th>
+                            <th className="py-3 px-2 text-center text-rose-400" title="Puntos totales recibidos en todos los sets">Pts-</th>
+                          </>
+                        )}
                         <th className="py-3 px-2 text-center" title="Diferencia">DIF</th>
                         <th className="py-3 px-3 text-center bg-primary/10 text-primary font-black" title="Puntos Totales">PTS</th>
                       </tr>
@@ -331,10 +344,18 @@ export function TorneoDetailClient({
                             </td>
                             <td className="py-3 px-2 text-center">{item.partidosJugados ?? 0}</td>
                             <td className="py-3 px-2 text-center">{item.partidosGanados ?? 0}</td>
-                            <td className="py-3 px-2 text-center">{item.partidosEmpatados ?? 0}</td>
+                            {!isVoleibol && (
+                              <td className="py-3 px-2 text-center">{item.partidosEmpatados ?? 0}</td>
+                            )}
                             <td className="py-3 px-2 text-center">{item.partidosPerdidos ?? 0}</td>
                             <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosFavor ?? 0}</td>
                             <td className="py-3 px-2 text-center text-muted-foreground">{item.puntosContra ?? 0}</td>
+                            {isVoleibol && (
+                              <>
+                                <td className="py-3 px-2 text-center text-cyan-400 font-semibold">{item.puntosAnotados ?? 0}</td>
+                                <td className="py-3 px-2 text-center text-rose-400 font-semibold">{item.puntosRecibidos ?? 0}</td>
+                              </>
+                            )}
                             <td className={`py-3 px-2 text-center font-bold ${(item.diferencia ?? 0) > 0 ? "text-emerald-500" : (item.diferencia ?? 0) < 0 ? "text-rose-500" : "text-muted-foreground"}`}>
                               {(item.diferencia ?? 0) > 0 ? `+${item.diferencia}` : item.diferencia ?? 0}
                             </td>
