@@ -476,7 +476,7 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
   const [sportFilter, setSportFilter] = useState("all");
   const [torneoFilter, setTorneoFilter] = useState("all");
   const [ramaFilter, setRamaFilter] = useState("all");
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
 
   // Extraer deportes y ramas únicas existentes
   const sports = ["all", ...Array.from(new Set(initialResultados.map((p) => p.deporte).filter(Boolean)))];
@@ -548,7 +548,7 @@ export function ResultadosPublicListClient({ initialResultados }: ResultadosPubl
               onClick={() => setSelectedDate(null)}
               className="font-bold text-primary hover:text-primary/80 hover:underline transition-colors cursor-pointer"
             >
-              Quitar filtro de fecha (Ver todos)
+              Ver todos los resultados
             </button>
           </div>
         )}
