@@ -132,7 +132,7 @@ export default async function Home() {
                 </div>
               )}
             </section>
-            <section className="pt-4 border-t border-border/40">
+            <section className="hidden lg:block pt-4 border-t border-border/40">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-lg font-extrabold marca-line">Síguenos</h2>
               </div>
@@ -189,9 +189,12 @@ export default async function Home() {
               </div>
             ) : (
               <div className="space-y-7">
-                {noticias.map((noticia) => (
-                  <CardNoticia key={noticia.id} noticia={noticia} />
-                ))}
+                {[...noticias]
+                  .sort((a, b) => new Date(b.fecha).getTime() - new Date(a.fecha).getTime())
+                  .slice(0, 5)
+                  .map((noticia) => (
+                    <CardNoticia key={noticia.id} noticia={noticia} />
+                  ))}
               </div>
             )}
           </section>
@@ -226,6 +229,16 @@ export default async function Home() {
                 </Link>
               </div>
               <TablaResultados partidos={resultados.slice(0, 5)} />
+            </section>
+
+            <section className="pt-2">
+              <div className="relative w-full aspect-square rounded-sm overflow-hidden border border-border/60 bg-muted/30">
+                <img
+                  src="/purodeporte.png"
+                  alt="Publicidad"
+                  className="w-full h-full object-cover"
+                />
+              </div>
             </section>
           </div>
 

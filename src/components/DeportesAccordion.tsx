@@ -84,9 +84,19 @@ export function DeportesAccordion({ deportesData }: DeportesAccordionProps) {
     }
   };
 
+  const sportEntries = Object.entries(deportesData);
+  const countActivos = (ramas: DeportesData[string]) =>
+    Object.values(ramas)
+      .flat()
+      .filter((t) => t.estado === "En Juego" || t.estado === "Inscripciones")
+      .length;
+  const sortedSportEntries = [...sportEntries].sort(
+    ([, ramasA], [, ramasB]) => countActivos(ramasB) - countActivos(ramasA)
+  );
+
   return (
     <div className="space-y-2">
-      {Object.entries(deportesData).map(([sportKey, ramas]) => {
+      {sortedSportEntries.map(([sportKey, ramas]) => {
         // Calcular el número total de torneos en este deporte
         const totalTorneos = Object.values(ramas).reduce((sum, list) => sum + list.length, 0);
         const isExpanded = expandedSport === sportKey;
