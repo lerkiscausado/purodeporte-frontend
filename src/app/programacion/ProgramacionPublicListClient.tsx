@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { DatePickerStrip } from "@/components/DatePickerStrip";
 import { Partido } from "@/types";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +30,15 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
   const [search, setSearch] = useState("");
   const [sportFilter, setSportFilter] = useState("all");
   const [ramaFilter, setRamaFilter] = useState("all");
+  const [selectedDate, setSelectedDate] = useState<Date | null>(new Date());
+
+  function isSameDay(date1: Date, date2: Date) {
+    return (
+      date1.getDate() === date2.getDate() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getFullYear() === date2.getFullYear()
+    );
+  }
 
   const getSportIcon = (deporte?: string) => {
     if (!deporte) return <FaTrophy className="h-3.5 w-3.5 text-primary shrink-0" />;
@@ -86,12 +96,43 @@ export function ProgramacionPublicListClient({ initialProgramacion }: Programaci
 
     const matchesSport = sportFilter === "all" || partido.deporte === sportFilter;
     const matchesRama = ramaFilter === "all" || partido.categoria === ramaFilter;
+    const matchesDate = !selectedDate || isSameDay(new Date(partido.fecha), selectedDate);
 
-    return matchesSearch && matchesSport && matchesRama;
+    return matchesSearch && matchesSport && matchesRama && matchesDate;
   });
 
   return (
     <div className="space-y-6">
+      {/* Selector de fecha con DatePickerStrip */}
+      <div className="space-y-2">
+        <DatePickerStrip
+          selectedDate={selectedDate ?? new Date()}
+          onChange={setSelectedDate}
+        />
+        {selectedDate !== null && (
+          <div className="flex items-center justify-between px-1 text-xs">
+            <span className="text-muted-foreground">
+              Filtrando por fecha:{" "}
+              <strong className="text-foreground">
+                {selectedDate.toLocaleDateString("es-CO", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </strong>
+            </span>
+            <button
+              type="button"
+              onClick={() => setSelectedDate(null)}
+              className="font-bold text-primary hover:text-primary/80 hover:underline transition-colors cursor-pointer"
+            >
+              Ver todos los partidos programados
+            </button>
+          </div>
+        )}
+      </div>
+
       {/* Controles de Búsqueda, Filtros y Selección de Vista */}
       <div className="flex flex-col md:flex-row gap-4 items-stretch md:items-center justify-between bg-card p-4 rounded-sm border border-border/60 shadow-sm">
         {/* Campo de Búsqueda y Selectores */}
