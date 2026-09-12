@@ -77,3 +77,13 @@ export interface Jugador {
   sexo: "Masculino" | "Femenino";
   imageUrl?: string;
 }
+
+export interface Publicidad {
+  id: number;
+  link: string;
+  fechaInicio: string;
+  fechaFin: string;
+  imagen: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

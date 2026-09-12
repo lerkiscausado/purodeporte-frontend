@@ -331,5 +331,17 @@ export const getPartidosByTorneo = async (torneoId: number): Promise<Partido[]> 
   }
 };
 
+export const getPublicidadVigente = async (): Promise<Array<{ id: number; imagen: string; link: string }>> => {
+  try {
+    const res = await fetch(getApiUrl("publicidad/vigente/public"), { next: { revalidate: 60 } });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : Array.isArray(data?.data) ? data.data : [];
+  } catch (error) {
+    console.error("Error al obtener publicidad vigente:", error);
+    return [];
+  }
+};
+
 export default api;
 

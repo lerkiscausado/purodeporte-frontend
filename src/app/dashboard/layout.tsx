@@ -10,6 +10,7 @@ import {
   FaMapMarkerAlt,
   FaUserFriends,
   FaNewspaper,
+  FaBullhorn,
 } from "react-icons/fa";
 
 export default async function DashboardLayout({
@@ -89,12 +90,20 @@ export default async function DashboardLayout({
               <FaMapMarkerAlt /> Escenarios
             </Link>
             {user.role === "admin" && (
-              <Link
-                href="/dashboard/noticias"
-                className="flex items-center gap-2 hover:text-primary transition-colors whitespace-nowrap"
-              >
-                <FaNewspaper /> Noticias
-              </Link>
+              <>
+                <Link
+                  href="/dashboard/noticias"
+                  className="flex items-center gap-2 hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <FaNewspaper /> Noticias
+                </Link>
+                <Link
+                  href="/dashboard/publicidad"
+                  className="flex items-center gap-2 hover:text-primary transition-colors whitespace-nowrap"
+                >
+                  <FaBullhorn /> Publicidad
+                </Link>
+              </>
             )}
           </div>
         </div>

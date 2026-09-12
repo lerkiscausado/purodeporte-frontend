@@ -3,7 +3,8 @@ import { CardTorneo } from "@/components/CardTorneo";
 import { PartidoItem } from "@/components/PartidoItem";
 import { TablaResultados } from "@/components/TablaResultados";
 import { EquipoAvatar } from "@/components/EquipoAvatar";
-import { getNoticias, getProgramacion, getResultados, getTorneos, getTorneosGrouped } from "@/services/api";
+import { getNoticias, getProgramacion, getResultados, getTorneos, getTorneosGrouped, getPublicidadVigente } from "@/services/api";
+import { getUploadUrl } from "@/lib/uploads";
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
@@ -13,13 +14,16 @@ import { FaFacebook, FaInstagram, FaTwitter, FaYoutube } from "react-icons/fa";
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  const [noticias, torneos, programacion, resultados, deportesData] = await Promise.all([
+  const [noticias, torneos, programacion, resultados, deportesData, publicidadVigente] = await Promise.all([
     getNoticias(),
     getTorneos(),
     getProgramacion(),
     getResultados(),
-    getTorneosGrouped()
+    getTorneosGrouped(),
+    getPublicidadVigente(),
   ]);
+
+  const anuncioDestacado = publicidadVigente && publicidadVigente.length > 0 ? publicidadVigente[0] : null;
 
   // Encontrar partido en vivo o el próximo
   const partidoDestacado = programacion[0];
@@ -231,15 +235,24 @@ export default async function Home() {
               <TablaResultados partidos={resultados.slice(0, 5)} />
             </section>
 
-            <section className="pt-2">
-              <div className="relative w-full aspect-square rounded-sm overflow-hidden border border-border/60 bg-muted/30">
-                <img
-                  src="/purodeporte.png"
-                  alt="Publicidad"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            </section>
+            {anuncioDestacado && (
+              <section className="pt-2">
+                <a
+                  href={anuncioDestacado.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="block group"
+                >
+                  <div className="relative w-full aspect-square rounded-sm overflow-hidden border border-border/60 bg-muted/30 group-hover:border-primary/50 transition-colors">
+                    <img
+                      src={getUploadUrl("publicidad", anuncioDestacado.imagen)}
+                      alt="Publicidad"
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
+                  </div>
+                </a>
+              </section>
+            )}
           </div>
 
         </div>
